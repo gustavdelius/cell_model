@@ -129,3 +129,14 @@ evolve_cell_pop <- function(t, x, p0, g, k, q, m) {
     out <- ode(y=p0, times=t, func=f)
     return(out[, -1])
 }
+
+fourier_interpolate <- function(p, N) {
+    n <- length(p)-1
+    x <- seq(0, 1, length.out=(N+1))
+    fp <- fft(p[-length(p)])
+    f <- rep(Re(fp[1]), length(x))
+    for (j in 2:(n/2+1)) {
+        f <- f +2*( Re(fp[j])*cos(2*pi*(j-1)*x) - Im(fp[j])*sin(2*pi*(j-1)*x))
+    }
+    return(f/n)
+}
