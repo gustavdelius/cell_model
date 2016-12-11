@@ -1,3 +1,6 @@
+# This file contains obsolete code from before the refactoring
+# The calculations performed here are now performed in the file explore.R
+
 library("Matrix")
 library("deSolve")
 library("rgl")
