@@ -101,6 +101,7 @@ evolve_cell_pop <- function(t, x, p0, g, k, q, m) {
     # Args:
     #   t: vector of times at which to return the population density
     #   x: vector of equally spaced steps in logarithmic cell size
+    #   p0 : vector on initial population density
     #   g: vector of growth rates
     #   k: vector of division rates
     #   q: vector giving offspring size distribution
@@ -112,6 +113,7 @@ evolve_cell_pop <- function(t, x, p0, g, k, q, m) {
     N <- length(x)  # Number of x steps. Also number of Fourier modes
     dx <- x[2]-x[1]
     L <- max(x)-min(x)+dx
+    w <- exp(x)
     
     k1 <- (2*pi/L)*1i*c(0:(N/2-1),0,(-N/2+1):-1)
     
@@ -122,7 +124,7 @@ evolve_cell_pop <- function(t, x, p0, g, k, q, m) {
         linearPart <- -k*p-m*p
         birthPart <- rev(2*L/N*Re(fft(
             FqR*(fft(rev(k*p))), inverse = TRUE)/N))
-        growthPart <- rev(Re(fft(fft(rev(g*p))*k1, inverse=TRUE)/N))/w[-1]
+        growthPart <- rev(Re(fft(fft(rev(g*p))*k1, inverse=TRUE)/N))/w
         return(list(linearPart + birthPart + growthPart))
     }
     

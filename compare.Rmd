@@ -1,0 +1,127 @@
+---
+title: "Comparing spectral method to finite-difference method"
+author: "Gustav Delius"
+date: "12 December 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Comparing spectral method to finite-difference method
+
+In this document we are going to compare the accuracy of the spectral method
+and the second-order finite-difference method in the example of the cell
+model.
+
+## The code
+
+We are going to use the code we had written earlier for solving the cell
+model equation with the spectral method. This is contained in the function
+evolve_cell_pop() in the file lib.R, which we now load.
+```{r source}
+source("lib.R")
+```
+Now we will also need a variant of that function that uses a second-order
+finite difference method, i.e., trapezoidal method for the integrals and
+symmetric finite-difference for the first derivative.
+
+```{r fd}
+evolve_cell_pop_fd <- function(t, x, p0, g, k, q, m) {
+    # Evolve cell population density with second-order finite-difference scheme
+    #
+    # Args:
+    #   t: vector of times at which to return the population density
+    #   x: vector of equally spaced steps in logarithmic cell size
+    #   p0 : vector on initial population density
+    #   g: vector of growth rates
+    #   k: vector of division rates
+    #   q: function giving offspring size distribution
+    #   m: death rate
+    #
+    # Value:
+    #   matrix of population densities (columns t, rows x)
+    N <- length(p)  # Number of x steps.
+    dx <- x[2]-x[1]
+    w <- exp(x)
+    
+    f <- function(t, p, parms) {
+        N <- length(p)
+        
+        linearPart <- -k*p-m*p
+        
+        birthPart <- rep_len(0, N)
+        for (i in 1:N) {
+            birthPart[i] <- 2*intx(k*p*q(w[i]/w)/w, w)[N-1]
+        }
+        
+        # Use symmetric difference for the first derivative.
+        # To get derivative at the end points where the function is zero we
+        # simply pad the function with one extra zero at each end.
+        gp <- c(0, g*p, 0)
+        growthPart <- (gp[1:N]-gp[3:(N+2)])/(2*dx)/w
+        
+        return(list(linearPart + birthPart + growthPart))
+    }
+    out <- ode(y=p0, times=t, func=f)
+    return(out[, -1])
+}
+```
+Next we set the parameters for the cell model
+```{r parms}
+# Set parameters ----
+a <- 0.7; b <- 0.5; 
+alpha <- 0.85; beta <- 1;
+wa <- 0.7;  # threshold for duplication
+delta <- 0.2  # width of offspring size distribution
+wmin <- wa*(1-delta)/2  # Smallest possible cell size
+
+N <- 1024  # Choose number of steps
+x <- seq(log(wmin), 0, length.out = N+1)
+w <- exp(x)
+
+# Growth rate
+g <- a*w^alpha-b*w^beta
+
+# Division rate
+# Use a k that stays finite but is large enough to ensure that
+# almost all cells duplicate before reaching w=1
+k <- 10000*(w-wa)^4
+k[w<wa] <- 0
+
+# Offspring size distribution
+q <- function(w) {
+    # Make q nonzero only between (1-delta)/2 and (1+delta)/2
+    # Here we use a smooth bump function
+    qr <- exp(-1/(1-(2/delta*(w-1/2))^2))/0.444*2/delta
+    qr[abs(w-0.5)>=delta/2] <- 0  # Note that we need >= instead of just >
+    # to avoid the singularity in the argument to the exponential
+    
+    return(qr)
+}
+```
+## Steady state solution
+We use our code to calculate the analytic steady-state solution of the model
+and plot it:
+```{r}
+# Calculate the steady-state solution ----
+sol <- steady_state(t, w, g, k, wa, q, delta)
+psi <- sol[[1]]
+m <- sol[[2]]
+
+# Plot the solution
+par(mar=c(5,5,1,1))
+plot(w, psi, type="l", lwd=3,
+     xlab="w", ylab=expression(Psi(w)))
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
