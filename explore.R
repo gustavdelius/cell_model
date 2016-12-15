@@ -4,19 +4,42 @@ library("rgl")
 source("lib.R")
 
 # Set parameters ----
-a <- 0.7; b <- 0.5; 
+# nutrient replenishment rate
+rho_0 <- 100; Nu_0 <- 100; 
+# cell growth rate
+a_inf <- 2; b <- 0.5; r <- 100; 
 alpha <- 0.85; beta <- 1;
+# Duplication rate
 wa <- 0.7;  # threshold for duplication
+k_0 <- 10000  # scale
+ke <- 4  # exponent
+# Offspring size distribution
 delta <- 0.2  # width of offspring size distribution
+# We do not specify a death rate but determine it so that the
+# steady-state nutrient concentration is Nu=1
+
 wmin <- wa*(1-delta)/2  # Smallest possible cell size
 
 N <- 256  # Choose number of steps
 x <- seq(log(wmin), 0, length.out = N+1)
 w <- exp(x)
 
-# Growth rate
-g <- a*w^alpha-b*w^beta
+# Nutrient replenishment rate
+rho <- function(Nu) {
+    rho_0*(1-Nu/Nu_0)
+}
 
+# Cell growth rate
+g <- function(w, Nu) {
+    a <- a_inf*Nu/(r+Nu)
+    a*w^alpha-b*w^beta
+}
+abar <- 0.7
+# We set Nu so that a(Nu)=abar
+Nu <- abar*r/(a_inf-abar)
+gv <- g(w, Nu)
+
+# Offspring size distribution
 q <- function(w) {
     # Make q nonzero only between (1-delta)/2 and (1+delta)/2
     # Here we use a smooth bump function
@@ -31,13 +54,14 @@ q <- function(w) {
     return(qr)
 }
 
+# Duplication rate
 # Use a k that stays finite but is large enough to ensure that
 # almost all cells duplicate before reaching w=1
-k <- 10000*(w-wa)^4
+k <- k_0*(w-wa)^ke
 k[w<wa] <- 0
 
 # Calculate the steady-state solution ----
-sol <- steady_state(t, w, g, k, wa, q, delta)
+sol <- steady_state(t, w, gv, k, wa, q, delta)
 psi <- sol[[1]]
 m <- sol[[2]]
 
@@ -58,6 +82,6 @@ p0 <- psi+0.05*runif(N+1)
 
 #psigauss=exp(-100*(x - 0.6)^2)
 
-p <- evolve_cell_pop(t, x, p0, g=g, k=k, q=q(w), m)
+p <- evolve_cell_pop(t, x, p0, g=gv, k=k, q=q(w), m)
 
 persp3d(t, w, p, col = "lightblue")
