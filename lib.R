@@ -101,6 +101,9 @@ evolve_cell_pop <- function(t, x, p0, g, k, q, m) {
     # Args:
     #   t: vector of times at which to return the population density
     #   x: vector of equally spaced steps in logarithmic cell size
+    #      This should include both endpoints of the periodic interval.
+    #      So length(x) is one larger than the number of steps
+    #   p0 : vector on initial population density
     #   g: vector of growth rates
     #   k: vector of division rates
     #   q: vector giving offspring size distribution
@@ -109,23 +112,43 @@ evolve_cell_pop <- function(t, x, p0, g, k, q, m) {
     # Value:
     #   matrix of population densities (columns t, rows x)
     
-    N <- length(x)  # Number of x steps. Also number of Fourier modes
-    dx <- x[2]-x[1]
-    L <- max(x)-min(x)+dx
+    N <- length(x)-1  # Number of x steps. Also number of Fourier modes
+    L <- max(x)-min(x)
+    w <- exp(x)
     
+    # We strip off the first value of everything because that is identical
+    # to the last one by periodicity
+    ks <- k[-1]
+    gs <- g[-1]
+    ws <- w[-1]
+    # fft of offspring size distribution
+    FqR <- fft(rev(q[-1]))
+    
+    # For calculating first derivative by Fourier transform
     k1 <- (2*pi/L)*1i*c(0:(N/2-1),0,(-N/2+1):-1)
     
-    # fft of offspring size distribution
-    FqR <- fft(rev(q))
-    
     f <- function(t, p, parms) {
-        linearPart <- -k*p-m*p
+        linearPart <- -ks*p-m*p
         birthPart <- rev(2*L/N*Re(fft(
-            FqR*(fft(rev(k*p))), inverse = TRUE)/N))
-        growthPart <- rev(Re(fft(fft(rev(g*p))*k1, inverse=TRUE)/N))/w[-1]
+            FqR*(fft(rev(ks*p))), inverse = TRUE)/N))
+        growthPart <- rev(Re(fft(fft(rev(gs*p))*k1, inverse=TRUE)/N))/ws
         return(list(linearPart + birthPart + growthPart))
     }
     
-    out <- ode(y=p0, times=t, func=f)
-    return(out[, -1])
+    out <- ode(y=p0[-1], times=t, func=f)
+    # Replace the times contained in the first column
+    # with the value at the boundary.
+    out[, 1] <- out[, N+1]
+    return(out)
+}
+
+fourier_interpolate <- function(p, n) {
+    N <- length(p)-1
+    x <- seq(0, 1, length.out=n)
+    fp <- fft(p[1:N])
+    f <- rep(Re(fp[1]), length(x))
+    for (j in 2:(N/2+1)) {
+        f <- f + 2*(Re(fp[j])*cos(2*pi*(j-1)*x) - Im(fp[j])*sin(2*pi*(j-1)*x))
+    }
+    return(f/N)
 }
