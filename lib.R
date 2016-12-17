@@ -20,7 +20,8 @@ intx <- function(f, x) {
 }
 
 steady_state <- function(t, w, g, k, wa, q, delta) {
-    # Determine steady state cell size distribution from analytic formulae
+    # Determine steady state cell size distribution 
+    # from the analytic formulae in eqs.(4.16) to (4.21)
     #
     # Args:
     #   t: vector of times at which to return the population density
@@ -34,6 +35,10 @@ steady_state <- function(t, w, g, k, wa, q, delta) {
     #   List containing
     #     matrix of population densities (columns t, rows w)
     #     mortality rate
+    
+    # Without loss of generality we can set w_* = 1 so that x=w/w_*=w
+    # The population density for any other w_* can be obtained by scaling
+    # see eqs.(6.1) and (6.2)
     
     Nw <- length(w)  # Number of w steps.
     wmin <- w[1]  # Smallest possible cell size
@@ -52,7 +57,7 @@ steady_state <- function(t, w, g, k, wa, q, delta) {
         # Use constant mortality 
         m <- rep_len(m0, length(w))
         
-        # Calculate e(w)
+        # Calculate e(w) in eq.(4.16)
         ep <- (k+m)/g
         # First calculate for w < wp
         es <- rev(intx(rev(ep[w<=wp]), rev(w[w<=wp])))
@@ -61,7 +66,7 @@ steady_state <- function(t, w, g, k, wa, q, delta) {
         # and put the results together
         e <- exp(c(es[-length(es)], el))
         
-        # Calculate h(w)
+        # Calculate h(w) in eq.(4.17)
         # TODO: Want to convert this to using spectral methods when the steps
         # are logarithmic
         hp <- k*e/g
@@ -90,13 +95,14 @@ steady_state <- function(t, w, g, k, wa, q, delta) {
     # in eq. (4.18)
     m <- uniroot(function(m0) p(m0)[[2]]-1, lower=0.05, upper=10)[["root"]]
     
-    # Calculate the solution
+    # Calculate and return the solution
     psi <- p(m)[[1]]
     list(psi, m)
 }
 
-evolve_cell_pop <- function(t, x, p0, Nu0, g, sigma, k, q, m, rho) {
-    # Evolve cell population density
+evolve_cell_pop <- function(t, x, p0, Nu0, g, sigma, k, q, m, dNu) {
+    # Evolve cell population density using the population balance equation
+    # see eq.(2.10)
     #
     # Args:
     #   t: vector of times at which to return the population density
@@ -109,7 +115,7 @@ evolve_cell_pop <- function(t, x, p0, Nu0, g, sigma, k, q, m, rho) {
     #   k: vector of division rates
     #   q: vector giving offspring size distribution
     #   m: death rate
-    #   rho: function giving nutrient growth rate
+    #   dNu: function giving nutrient growth rate
     #
     # Value:
     #   matrix of population densities (columns t, rows x) with an additional
@@ -136,7 +142,7 @@ evolve_cell_pop <- function(t, x, p0, Nu0, g, sigma, k, q, m, rho) {
         birthPart <- rev(2*L/N*Re(fft(
             FqR*(fft(rev(ks*p))), inverse = TRUE)/N))
         growthPart <- rev(Re(fft(fft(rev(gs*p))*k1, inverse=TRUE)/N))/ws
-        nutrientGrowth <- rho(Nu, c(0, p))
+        nutrientGrowth <- dNu(Nu, c(0, p))
         # above we added a zero at start of p to give it lenght N+1
         return(list(c(linearPart + birthPart + growthPart, nutrientGrowth)))
     }
