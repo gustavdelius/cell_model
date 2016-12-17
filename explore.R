@@ -1,11 +1,10 @@
 library("rgl")
-
 source("lib.R")
 
 M <- 1  # Number of species
 N <- 32  # Number of steps
 
-# Create grid
+# Create grid ----
 wa <- 0.7;  # threshold for duplication
 delta <- 0.2  # width of offspring size distribution
 #
@@ -13,32 +12,36 @@ wmin <- wa*(1-delta)/2  # Smallest possible cell size
 x <- seq(log(wmin), 0, length.out = N+1)
 w <- exp(x)  # vector of weights
 
-# Nutrient dependent feeding coefficient in growth rate
+# Nutrient dependent feeding coefficient in growth rate ----
+# See eq.(2.11)
 a_inf <- 2; r <- 100;
 #
 a <- function(Nu) {
     a_inf*Nu/(r+Nu)
 }
 
-# Nutrient growth rate
+# Nutrient growth rate ----
+# See eq.(2.12) and (2.13)
 rho_0 <- 100; Nu_0 <- 100;
 #
-rho <- function(Nu, psi) {
+dNu <- function(Nu, psi) {
     integral <- intx(w^alpha*psi, w)
     rho_0*(1-Nu/Nu_0) - a(Nu)*integral[length(w)]
 }
 
-# Offspring size distribution
+# Offspring size distribution ----
+# See eq.(2.9) for the definition of q
+# Here we use a smooth bump function
 q <- function(w) {
-    # Make q nonzero only between (1-delta)/2 and (1+delta)/2
-    # Here we use a smooth bump function
     qr <- exp(-1/(1-(2/delta*(w-1/2))^2))/0.444*2/delta
-    qr[abs(w-0.5)>=delta/2] <- 0  # Note that we need >= instead of just >
+    # Make q nonzero only between (1-delta)/2 and (1+delta)/2
+    qr[abs(w-0.5)>=delta/2] <- 0  
+    # Note that we needed >= instead of just >
     # to avoid the singularity in the argument to the exponential
     qr
 }
 
-# Duplication rate
+# Duplication rate ----
 k_0 <- 10000  # scale
 ke <- 4  # exponent
 # Use a k that stays finite but is large enough to ensure that
@@ -46,13 +49,15 @@ ke <- 4  # exponent
 k <- k_0*(w-wa)^ke
 k[w<wa] <- 0
 
+# Death rate ----
 # We do not specify a death rate but determine it so that the
 # steady-state occurs at a certain intake rate
 abar <- 0.7
-# This determine the steady-state value of Nu
+# This determine the steady-state value of Nu, by solving eq.(2.11) for N
 Nu <- abar*r/(a_inf-abar)
 
-# Cell growth rate
+# Cell growth rate ----
+# See eq.(2.5)
 alpha <- 0.85; b <- 0.5; beta <- 1;
 #
 g <- function(w, Nu) {
@@ -60,12 +65,15 @@ g <- function(w, Nu) {
 }
 gv <- g(w, Nu)
 
-# Calculate the steady-state solution ----
+# Calculate the analytic steady-state solution ----
+# This uses the expressions (4.16) to (4.21)
 sol <- steady_state(t, w, gv, k, wa, q, delta)
 psi <- sol[[1]]
-m <- sol[[2]]
+m <- sol[[2]]  # mortality rate
 
 # Normalise psi so that the nutrient is at steady-state
+# For this we observe that in eq.(2.12) the sigma is proportional to psi
+# So we get \rho and \sigma to cancel by rescaling \psi -> psi * rho/sigma
 integral <- intx(w^alpha*psi, w)
 psi <- psi * rho_0*(1-Nu/Nu_0) / (a(Nu)*integral[length(w)])
 
@@ -88,7 +96,7 @@ Nu0 <- Nu*(1+0.05*runif(1))
 p0=200*exp(-100*(w - 0.6)^2)
 plot(w, p0)
 
-p <- evolve_cell_pop(t, x, p0, Nu0, g, sigma, k=k, q=q(w), m, rho)
+p <- evolve_cell_pop(t, x, p0, Nu0, g, sigma, k=k, q=q(w), m, dNu)
 
 persp3d(t, w, p[,1:(N+1)], col = "lightblue")
 plot(t, p[,N+2], type="l", ylab="N")
