@@ -2,46 +2,31 @@ library("rgl")
 
 source("lib.R")
 
-# Set parameters ----
-# nutrient replenishment rate
-rho_0 <- 100; Nu_0 <- 100; 
-# cell growth rate
-a_inf <- 2; b <- 0.5; r <- 100; 
-alpha <- 0.85; beta <- 1;
-# Duplication rate
+M <- 1  # Number of species
+N <- 32  # Number of steps
+
+# Create grid
 wa <- 0.7;  # threshold for duplication
-k_0 <- 10000  # scale
-ke <- 4  # exponent
-# Offspring size distribution
 delta <- 0.2  # width of offspring size distribution
-# We do not specify a death rate but determine it so that the
-# steady-state occurs at a certain intake rate
-abar <- 0.7
-# This determine the steady-state value of Nu
-Nu <- abar*r/(a_inf-abar)
-
+#
 wmin <- wa*(1-delta)/2  # Smallest possible cell size
-
-N <- 256  # Choose number of steps
 x <- seq(log(wmin), 0, length.out = N+1)
-w <- exp(x)
+w <- exp(x)  # vector of weights
 
 # Nutrient dependent feeding coefficient in growth rate
+a_inf <- 2; r <- 100;
+#
 a <- function(Nu) {
     a_inf*Nu/(r+Nu)
 }
 
 # Nutrient growth rate
+rho_0 <- 100; Nu_0 <- 100;
+#
 rho <- function(Nu, psi) {
     integral <- intx(w^alpha*psi, w)
     rho_0*(1-Nu/Nu_0) - a(Nu)*integral[length(w)]
 }
-
-# Cell growth rate
-g <- function(w, Nu) {
-    a(Nu)*w^alpha-b*w^beta
-}
-gv <- g(w, Nu)
 
 # Offspring size distribution
 q <- function(w) {
@@ -54,10 +39,26 @@ q <- function(w) {
 }
 
 # Duplication rate
+k_0 <- 10000  # scale
+ke <- 4  # exponent
 # Use a k that stays finite but is large enough to ensure that
 # almost all cells duplicate before reaching w=1
 k <- k_0*(w-wa)^ke
 k[w<wa] <- 0
+
+# We do not specify a death rate but determine it so that the
+# steady-state occurs at a certain intake rate
+abar <- 0.7
+# This determine the steady-state value of Nu
+Nu <- abar*r/(a_inf-abar)
+
+# Cell growth rate
+alpha <- 0.85; b <- 0.5; beta <- 1;
+#
+g <- function(w, Nu) {
+    a(Nu)*w^alpha-b*w^beta
+}
+gv <- g(w, Nu)
 
 # Calculate the steady-state solution ----
 sol <- steady_state(t, w, gv, k, wa, q, delta)
@@ -75,7 +76,7 @@ plot(w, psi, type="l", lwd=3,
 
 # Solve equation ----
 
-tmax <- 100  # final time
+tmax <- 8  # final time
 Nt <- 100    # number of time steps at which to store intermediate values
 t <- seq(0, tmax, by=tmax/Nt)
 
