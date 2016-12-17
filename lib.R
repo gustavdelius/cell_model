@@ -100,7 +100,7 @@ steady_state <- function(t, w, g, k, wa, q, delta) {
     list(psi, m)
 }
 
-evolve_cell_pop <- function(t, x, p0, Nu0, g, sigma, k, q, m, dNu) {
+evolve_cell_pop <- function(t, x, p0, Nu0, g, k, q, m, dNu) {
     # Evolve cell population density using the population balance equation
     # see eq.(2.10)
     #
@@ -109,7 +109,7 @@ evolve_cell_pop <- function(t, x, p0, Nu0, g, sigma, k, q, m, dNu) {
     #   x: vector of equally spaced steps in logarithmic cell size
     #      This should include both endpoints of the periodic interval.
     #      So length(x) is one larger than the number of steps
-    #   p0 : vector on initial population density
+    #   p0 : (N+1) x M matrix of initial population densities
     #   Nu0: initial nutrient concentration
     #   g: function giving growth rates g(w, Nu)
     #   k: vector of division rates
@@ -118,8 +118,9 @@ evolve_cell_pop <- function(t, x, p0, Nu0, g, sigma, k, q, m, dNu) {
     #   dNu: function giving nutrient growth rate
     #
     # Value:
-    #   matrix of population densities (columns t, rows x) with an additional
-    #     column at the end containing the nutrient concentrations.
+    #   list of two elements:
+    #     Nt x (N+1) x M  array of population densities
+    #     vector of length Nt containing the nutrient densities
     
     N <- length(x)-1  # Number of x steps. Also number of Fourier modes
     w <- exp(x)
@@ -128,30 +129,38 @@ evolve_cell_pop <- function(t, x, p0, Nu0, g, sigma, k, q, m, dNu) {
     # We strip off the first value of everything because that is identical
     # to the last one by periodicity
     ks <- k[-1]
-    ws <- w[-1]
+    wsh <- w[-1]
     # fft of offspring size distribution
     FqR <- fft(rev(q[-1]))
     # For calculating first derivative by Fourier transform
     k1 <- (2*pi/L)*1i*c(0:(N/2-1),0,(-N/2+1):-1)
     
-    f <- function(t, pN, parms) {
-        p <- pN[-length(pN)]
-        Nu <- pN[length(pN)]
-        gs <- g(ws, Nu)
-        linearPart <- -ks*p-m*p
-        birthPart <- rev(2*L/N*Re(fft(
-            FqR*(fft(rev(ks*p))), inverse = TRUE)/N))
-        growthPart <- rev(Re(fft(fft(rev(gs*p))*k1, inverse=TRUE)/N))/ws
-        nutrientGrowth <- dNu(Nu, c(0, p))
-        # above we added a zero at start of p to give it lenght N+1
-        return(list(c(linearPart + birthPart + growthPart, nutrientGrowth)))
+    ff <- function(p, gs) {
+        -ks*p-m*p +  # linear part
+            # birth part
+            rev(2*L/N*Re(fft(FqR*(fft(rev(ks*p))), inverse = TRUE)/N)) +
+            # growth part
+            rev(Re(fft(fft(rev(gs*p))*k1, inverse=TRUE)/N))/wsh
     }
     
-    out <- ode(y=c(p0[-1], Nu0), times=t, func=f, parms=parms)
-    # Replace the times contained in the first column
-    # with the value at the boundary.
-    out[, 1] <- out[, N+1]
-    out
+    f <- function(t, pN, parms) {
+        p <- matrix(pN[-length(pN)], ncol=M)
+        Nu <- pN[length(pN)]
+        gs <- g(wsh, Nu)
+        f <- apply(p, 2, ff, gs)
+        nutrientGrowth <- dNu(Nu, rbind(0, p))
+        # above we added a zero at start of p to give it lenght N+1
+        # Return
+        list(c(f, nutrientGrowth))
+    }
+    
+    out <- ode(y=c(p0[-1,], Nu0), times=t, func=f, parms=parms)
+    
+    Nut <- out[ , ncol(out)]
+    psit <- array(dim=c(length(t), N+1, M))
+    psit[ , -1, ] <- out[ , 2:(ncol(out)-1)]
+    psit[ , 1, ] <- psit[ , N+1, ]
+    list(psit, Nut)
 }
 
 fourier_interpolate <- function(p, n) {
