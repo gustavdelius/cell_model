@@ -23,6 +23,7 @@ N <- 32  # Number of steps
 #
 wmin <- wa*(1-delta)/2  # Smallest possible cell size
 x <- seq(log(wmin), 0, length.out = N+1)  # equal step sizes in log size
+dx <- x[2]-x[1]
 w <- exp(x)  # vector of weights
 
 # Nutrient dependent feeding coefficient in growth rate ----
@@ -42,7 +43,7 @@ dNu <- function(Nu, psi) {
     #   Nu: Nutrient concentration
     #   psi: (N+1) x M matrix with each column the scaled population of one 
     #        species
-    integral <- colSums(w^alpha*psi)
+    integral <- colSums(w^(alpha+1)*psi)*dx
     rho_0*(1-Nu/Nu_0) - (a(Nu)*sum(ws^(2-xi-gamma)*integral))
 }
 
@@ -98,7 +99,7 @@ psi = matrix(psi, nrow=N+1, ncol=M)
 # For this we observe that in eq.(2.12) the sigma is proportional to psi
 # So we get \rho and \sigma to cancel by rescaling \psi -> psi * rho/sigma
 # Alternatively see eqs.(5.33)-(5.35)
-integral <- colSums(w^alpha*psi)
+integral <- colSums(w^(alpha+1)*psi)*dx
 psi <- psi * rho_0*(1-Nu/Nu_0) / (a(Nu)*sum(ws^(2-xi-gamma)*integral))
 
 # Plot the single-species solution
