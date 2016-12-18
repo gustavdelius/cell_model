@@ -43,7 +43,7 @@ dNu <- function(Nu, psi) {
     #   psi: (N+1) x M matrix with each column the scaled population of one 
     #        species
     integral <- colSums(w^alpha*psi)
-    rho_0*(1-Nu/Nu_0) - (a(Nu)*sum(ws^(1-xi-gamma)*integral))
+    rho_0*(1-Nu/Nu_0) - (a(Nu)*sum(ws^(2-xi-gamma)*integral))
 }
 
 # Offspring size distribution ----
@@ -99,7 +99,7 @@ psi = matrix(psi, nrow=N+1, ncol=M)
 # So we get \rho and \sigma to cancel by rescaling \psi -> psi * rho/sigma
 # Alternatively see eqs.(5.33)-(5.35)
 integral <- colSums(w^alpha*psi)
-psi <- psi * rho_0*(1-Nu/Nu_0) / (a(Nu)*sum(ws^(1-xi-gamma)*integral))
+psi <- psi * rho_0*(1-Nu/Nu_0) / (a(Nu)*sum(ws^(2-xi-gamma)*integral))
 
 # Plot the single-species solution
 par(mar=c(5,5,1,1))
@@ -119,10 +119,10 @@ Nu0 <- Nu*(1+0.05*runif(1))
 
 # Some alternatives
 #p0[ ,1] <- 5*exp(-100*(w - 0.6)^2)
-p0[ ,1] <- p0[(N+1):1,1]
-plot(w, p0[ ,1])
+#p0[ ,1] <- p0[(N+1):1,1]
+#plot(w, p0[ ,1])
 
-p <- evolve_cell_pop(t, x, p0, Nu0, g, k=k, q=q(w), m, dNu)
+p <- evolve_cell_pop(t, w, ws, p0, Nu0, g, k=k, q=q(w), m, dNu)
 psit <- p[[1]]
 Nut <- p[[2]]
 

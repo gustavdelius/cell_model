@@ -100,15 +100,16 @@ steady_state <- function(t, w, g, k, wa, q, delta) {
     list(psi, m)
 }
 
-evolve_cell_pop <- function(t, x, p0, Nu0, g, k, q, m, dNu) {
+evolve_cell_pop <- function(t, w, ws, p0, Nu0, g, k, q, m, dNu) {
     # Evolve cell population density using the population balance equation
     # see eq.(2.10)
     #
     # Args:
     #   t: vector of times at which to return the population density
-    #   x: vector of equally spaced steps in logarithmic cell size
+    #   w: vector of logarithmic spaced steps in cell size
     #      This should include both endpoints of the periodic interval.
-    #      So length(x) is one larger than the number of steps
+    #      So length(W) is one larger than the number of steps
+    #   ws: vector of characteristic cell sizes
     #   p0 : (N+1) x M matrix of initial population densities
     #   Nu0: initial nutrient concentration
     #   g: function giving growth rates g(w, Nu)
@@ -122,10 +123,13 @@ evolve_cell_pop <- function(t, x, p0, Nu0, g, k, q, m, dNu) {
     #     Nt x (N+1) x M  array of population densities
     #     vector of length Nt containing the nutrient densities
     
-    N <- length(x)-1  # Number of x steps. Also number of Fourier modes
-    w <- exp(x)
+    N <- length(w)-1  # Number of x steps. Also number of Fourier modes
+    M <- length(ws)   # Number of species
     
-    L <- max(x)-min(x)
+    L <- log(max(w))-log(min(w))
+    # create a matrix with N copies of column vector ws^(-xi). This is needed
+    # later to implement the multiplication by ws^(-xi) in the fastest way 
+    wsm <- rep(ws^(-xi), rep(N, M))
     # We strip off the first value of everything because that is identical
     # to the last one by periodicity
     ks <- k[-1]
@@ -136,7 +140,7 @@ evolve_cell_pop <- function(t, x, p0, Nu0, g, k, q, m, dNu) {
     k1 <- (2*pi/L)*1i*c(0:(N/2-1),0,(-N/2+1):-1)
     
     ff <- function(p, gs) {
-        -ks*p-m*p +  # linear part
+        -(ks+m)*p +  # linear part
             # birth part
             rev(2*L/N*Re(fft(FqR*(fft(rev(ks*p))), inverse = TRUE)/N)) +
             # growth part
@@ -147,7 +151,7 @@ evolve_cell_pop <- function(t, x, p0, Nu0, g, k, q, m, dNu) {
         p <- matrix(pN[-length(pN)], ncol=M)
         Nu <- pN[length(pN)]
         gs <- g(wsh, Nu)
-        f <- apply(p, 2, ff, gs)
+        f <- apply(p, 2, ff, gs) * wsm
         nutrientGrowth <- dNu(Nu, rbind(0, p))
         # above we added a zero at start of p to give it lenght N+1
         # Return
