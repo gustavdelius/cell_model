@@ -1,7 +1,7 @@
 library("rgl")
 source("lib.R")
 
-# Select characteristic cell sizes
+# Select characteristic cell sizes ----
 # ws denotes the maximum cell size
 # xs denotes the log of the maximum cell size
 # We space our species equidistant in log size
@@ -11,7 +11,7 @@ delta_xs <- 0.5  # Spacing of species in log size
 xs <- seq(xs_min, by=delta_xs, length.out=M)
 ws <- exp(xs)
 
-# Set exponents
+# Set exponents ----
 xi <- 0.15
 nu <- 0.85
 gamma <- 1 + nu + xi
@@ -21,6 +21,9 @@ wa <- 0.7;  # threshold for duplication
 delta <- 0.2  # width of offspring size distribution
 N <- 32  # Number of steps
 #
+if (N %% 2 > 0) {
+    error("Our code requires N to be even.")
+}
 wmin <- wa*(1-delta)/2  # Smallest possible cell size
 x <- seq(log(wmin), 0, length.out = N+1)  # equal step sizes in log size
 dx <- x[2]-x[1]
