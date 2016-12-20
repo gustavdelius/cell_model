@@ -1,5 +1,5 @@
 library("rgl")
-source("lib.R")
+source("multi-species/lib.R")
 
 # Select characteristic cell sizes ----
 # ws denotes the maximum cell size
