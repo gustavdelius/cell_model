@@ -125,12 +125,12 @@ evolve_cell_pop <- function(t, x, p0, Nu0, g, sigma, k, q, m, dNu) {
     w <- exp(x)
     
     L <- max(x)-min(x)
-    # We strip off the first value of everything because that is identical
-    # to the last one by periodicity
-    ks <- k[-1]
-    ws <- w[-1]
+    # We strip off the last value of everything because that is identical
+    # to the first one by periodicity
+    ks <- k[-(N+1)]
+    ws <- w[-(N+1)]
     # fft of offspring size distribution
-    FqR <- fft(rev(q[-1]))
+    FqR <- fft(q[-(N+1)])
     # For calculating first derivative by Fourier transform
     k1 <- (2*pi/L)*1i*c(0:(N/2-1),0,(-N/2+1):-1)
     
@@ -139,19 +139,18 @@ evolve_cell_pop <- function(t, x, p0, Nu0, g, sigma, k, q, m, dNu) {
         Nu <- pN[length(pN)]
         gs <- g(ws, Nu)
         linearPart <- -ks*p-m*p
-        birthPart <- rev(2*L/N*Re(fft(
-            FqR*(fft(rev(ks*p))), inverse = TRUE)/N))
-        growthPart <- rev(Re(fft(fft(rev(gs*p))*k1, inverse=TRUE)/N))/ws
+        birthPart <- 2*L/N*Re(fft(FqR*(fft(ks*p)), inverse = TRUE)/N)
+        growthPart <- -Re(fft(fft(gs*p)*k1, inverse=TRUE)/N)/ws
         nutrientGrowth <- dNu(Nu, c(0, p))
         # above we added a zero at start of p to give it lenght N+1
         return(list(c(linearPart + birthPart + growthPart, nutrientGrowth)))
     }
     
-    out <- ode(y=c(p0[-1], Nu0), times=t, func=f, parms=parms)
-    # Replace the times contained in the first column
-    # with the value at the boundary.
-    out[, 1] <- out[, N+1]
-    out
+    out <- ode(y=c(p0[-(N+1)], Nu0), times=t, func=f, parms=parms)
+    # Remove the times contained in the first column and add a column
+    # for the right boundary, set to the same value as at the left boundary
+    psi <- cbind(out[, 2:(N+1)], out[, 2], out[,N+2])
+    psi
 }
 
 fourier_interpolate <- function(p, n) {
