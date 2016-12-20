@@ -135,7 +135,7 @@ evolve_cell_pop <- function(t, w, ws, p0, Nu0, g, k, q, m, dNu) {
     ks <- k[-1]
     wsh <- w[-1]
     # fft of offspring size distribution
-    FqR <- fft(rev(q[-1]))
+    FqR <- fft(q[-(N+1)])
     # For calculating first derivative by Fourier transform
     k1 <- (2*pi/L)*1i*c(0:(N/2-1),0,(-N/2+1):-1)
     
@@ -158,12 +158,12 @@ evolve_cell_pop <- function(t, w, ws, p0, Nu0, g, k, q, m, dNu) {
         list(c(f, nutrientGrowth))
     }
     
-    out <- ode(y=c(p0[-1,], Nu0), times=t, func=f, parms=parms)
+    out <- ode(y=c(p0[-(N+1),], Nu0), times=t, func=f, parms=parms)
     
     Nut <- out[ , ncol(out)]
     psit <- array(dim=c(length(t), N+1, M))
-    psit[ , -1, ] <- out[ , 2:(ncol(out)-1)]
-    psit[ , 1, ] <- psit[ , N+1, ]
+    psit[ , -(N+1), ] <- out[ , 2:(ncol(out)-1)]
+    psit[ , N+1, ] <- psit[ , 1, ]
     list(psit, Nut)
 }
 
