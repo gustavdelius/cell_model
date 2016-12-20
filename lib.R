@@ -130,21 +130,21 @@ evolve_cell_pop <- function(t, w, ws, p0, Nu0, g, k, q, m, dNu) {
     # create a matrix with N copies of column vector ws^(-xi). This is needed
     # later to implement the multiplication by ws^(-xi) in the fastest way 
     wsm <- rep(ws^(-xi), rep(N, M))
-    # We strip off the first value of everything because that is identical
-    # to the last one by periodicity
-    ks <- k[-1]
-    wsh <- w[-1]
+    # We strip off the last value of everything because that is identical
+    # to the first one by periodicity
+    ks <- k[-(N+1)]
+    wsh <- w[-(N+1)]
     # fft of offspring size distribution
-    FqR <- fft(rev(q[-1]))
+    FqR <- fft(q[-(N+1)])
     # For calculating first derivative by Fourier transform
     k1 <- (2*pi/L)*1i*c(0:(N/2-1),0,(-N/2+1):-1)
     
     ff <- function(p, gs) {
         -(ks+m)*p +  # linear part
             # birth part
-            rev(2*L/N*Re(fft(FqR*(fft(rev(ks*p))), inverse = TRUE)/N)) +
+            2*L/N*Re(fft(FqR*(fft(ks*p)), inverse = TRUE)/N) +
             # growth part
-            rev(Re(fft(fft(rev(gs*p))*k1, inverse=TRUE)/N))/wsh
+            -Re(fft(fft(gs*p)*k1, inverse=TRUE)/N)/wsh
     }
     
     f <- function(t, pN, parms) {
@@ -158,12 +158,12 @@ evolve_cell_pop <- function(t, w, ws, p0, Nu0, g, k, q, m, dNu) {
         list(c(f, nutrientGrowth))
     }
     
-    out <- ode(y=c(p0[-1,], Nu0), times=t, func=f, parms=parms)
+    out <- ode(y=c(p0[-(N+1),], Nu0), times=t, func=f, parms=parms)
     
     Nut <- out[ , ncol(out)]
     psit <- array(dim=c(length(t), N+1, M))
-    psit[ , -1, ] <- out[ , 2:(ncol(out)-1)]
-    psit[ , 1, ] <- psit[ , N+1, ]
+    psit[ , -(N+1), ] <- out[ , 2:(ncol(out)-1)]
+    psit[ , N+1, ] <- psit[ , 1, ]
     list(psit, Nut)
 }
 
