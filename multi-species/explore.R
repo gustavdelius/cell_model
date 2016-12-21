@@ -1,15 +1,5 @@
 library("rgl")
-source("multi-species/lib.R")
-
-# Select characteristic cell sizes ----
-# ws denotes the maximum cell size
-# xs denotes the log of the maximum cell size
-# We space our species equidistant in log size
-xs_min <- 0  # Smallest characteristic log cell size
-M <- 3  # Number of species
-delta_xs <- 0.5  # Spacing of species in log size
-xs <- seq(xs_min, by=delta_xs, length.out=M)
-ws <- exp(xs)
+source("multi-species/steady_state.R")
 
 # Set exponents ----
 xi <- 0.15
@@ -22,12 +12,24 @@ delta <- 0.2  # width of offspring size distribution
 N <- 32  # Number of steps
 #
 if (N %% 2 > 0) {
-    error("Our code requires N to be even.")
+    stop("Our code requires N to be even.")
 }
 wmin <- wa*(1-delta)/2  # Smallest possible cell size
 x <- seq(log(wmin), 0, length.out = N+1)  # equal step sizes in log size
 dx <- x[2]-x[1]
 w <- exp(x)  # vector of weights
+
+# Select characteristic cell sizes ----
+# ws denotes the maximum cell size
+# xs denotes the log of the maximum cell size
+# We space our species equidistant in log size
+M <- 3  # Number of species
+dxs <- 8 * dx  # Spacing of species in log size
+if (dxs %% dx > 0) {
+    stop("Our code needs the spacing in species to be a multiple of the size step size dx.")
+}
+xs <- seq(-M*dxs, 0, length.out=M)
+ws <- exp(xs)
 
 # Nutrient dependent feeding coefficient in growth rate ----
 # See eq.(2.11)
@@ -92,7 +94,7 @@ sol <- steady_state(t, w, gv, k, wa, q, delta)
 psi <- sol[[1]]
 m <- sol[[2]]  # mortality rate
 if (length(psi) != N+1) {
-    error("psi has the wrong length.")
+    stop("psi has the wrong length.")
 }
 
 # make a matrix containing M steady-state distributions
@@ -126,7 +128,7 @@ Nu0 <- Nu*(1+0.05*runif(1))
 #p0[ ,1] <- p0[(N+1):1,1]
 #plot(w, p0[ ,1])
 
-p <- evolve_cell_pop(t, w, ws, p0, Nu0, g, k=k, q=q(w), m, dNu)
+p <- evolve_cell_pop(t, x, xs, p0, Nu0, g, k=k, q=q(w), m, dNu)
 psit <- p[[1]]
 Nut <- p[[2]]
 
