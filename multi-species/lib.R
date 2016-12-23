@@ -1,6 +1,6 @@
 library("deSolve")
 
-evolve_cell_pop <- function(t, x, xs, p0, Nu0, g, k, q, m, dNu) {
+evolve_cell_pop <- function(t, x, xs, p0, Nu0, g, k, q, m, dNu, S) {
     # Evolve cell population density using the population balance equation
     # see eq.(2.10)
     #
@@ -17,6 +17,7 @@ evolve_cell_pop <- function(t, x, xs, p0, Nu0, g, k, q, m, dNu) {
     #   q: vector giving offspring size distribution
     #   m: death rate
     #   dNu: function giving nutrient growth rate
+    #   S: function giving predation kernel
     #
     # Value:
     #   list of two elements:
@@ -32,28 +33,50 @@ evolve_cell_pop <- function(t, x, xs, p0, Nu0, g, k, q, m, dNu) {
         stop("The smallest x must be negative.")
     }
     L <- -min(x)
-    dx <- x[2]-x[1]
+    dx <- x[2]-x[1]  # Step size in x
     if (diff(range(diff(x))) > .Machine$double.eps ^ 0.5) {
         stop("Our code needs equally-spaced log-size steps")
     }
     if (max(xs) != 0) {
         stop("The largest xs should be zero, by convention.")
     }
-    if (diff(range(diff(xs) %% dx))  > .Machine$double.eps ^ 0.5) {
+    if (min(x) >= 0) {
+        stop("The smallest xs must be negative.")
+    }
+    dxs <- xs[2]-xs[1]  # Step size in xs
+    if (diff(range(diff(xs))) > .Machine$double.eps ^ 0.5) {
+        stop("Our code needs equally-spaced log-size steps")
+    }
+    if (dxs %% dx  > .Machine$double.eps ^ 0.5) {
         stop("Our code needs the spacing in species to be a multiple of the size step size dx.")
     }
+    
     # Create x steps for entire community spectrum
-    xa <- seq(min(xs)+min(x), 0, by=dx)
+    # For now we impose a periodicity where the smallest species is also
+    # assumed to sit above the largest by the same distance as between the
+    # two smallest species.
+    ds <- round(dxs/dx)  # number of steps separating species
+    xa <- seq(xs[1]-dxs, 0, by=dx)
     Na <- length(xa)
+    if (Na != Ns*ds+1) {
+        stop("The length of xa is wrong.")
+    }
     La <- min(xa)
-    # Create index vector locating species maximal sizes in the xa vector
-    indxs <- Na + xs / dx
+    # Without wrapping around the size spectrum will be longer:
+    Nal <- (Ns-1)*ds+N+1
+    xal <- seq(xs[1]+x[1], 0, by=dx)
     # Create weight vectors from log-weight vectors
     w <- exp(x)
     ws <- exp(xs)
+    wal <- exp(xal)
     
-    # Create vector containing ws^{-\gamma}
-    wsgamma <- ws^{-gamma}
+    # Predation
+    mkernel <- fft(S(-xa)*wa^(-xi))
+    gkernel <- fft(S(xa)*wa^(gamma-2))
+    
+    # Create vectors containing ws^{-\gamma} and wa^{-\gamma}
+    wsgamma <- ws^(-gamma)
+    walgamma <- wal^(gamma)
     # Create a matrix with N copies of column vector ws^(-xi). This is needed
     # later to implement the multiplication by ws^(-xi) in the fastest way 
     wsm <- rep(ws^(-xi), rep(N, Ns))
@@ -78,14 +101,23 @@ evolve_cell_pop <- function(t, x, xs, p0, Nu0, g, k, q, m, dNu) {
     f <- function(t, pN, parms) {
         p <- matrix(pN[-length(pN)], ncol=Ns)
         Nu <- pN[length(pN)]
+        
         # Determine community spectrum
-        pc <- vector("numeric", length=Na)
+        pc <- vector("numeric", length=Nal)
+        idx <- 1:N
         for (i in 1:Ns) {
-            pc[(indxs[i]-N):(indxs[i]-1)] <- 
-                pc[(indxs[i]-N):(indxs[i]-1)] + wsgamma[i]*p[,i]
+            pc[idx] <- pc[idx] + wsgamma[i]*p[,i]
+            idx <- idx + ds
         }
+        # Pull out a factor of w^{-\gamma} so that pc is constant in steady state
+        pc <- walgamma*pc
+        # Wrap around everything below min(xs)-dxs
+        pcp <- pc[(Nal-Na+1):Nal]
+        pcp[(2*Na-Nal):Na] <- pcp[(2*Na-Nal):Na] + pc[1:(Nal-Na+1)]
+        
         # Calculate growth rate
         gs <- g(wsh, Nu)
+        
         # Calculate right-hand side of population balance equation
         f <- apply(p, 2, ff, gs) * wsm
         nutrientGrowth <- dNu(Nu, rbind(0, p))
