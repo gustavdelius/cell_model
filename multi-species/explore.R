@@ -18,6 +18,7 @@ if (N %% 2 > 0) {
 wmin <- wa*(1-delta)/2  # Smallest possible cell size
 x <- seq(log(wmin), 0, length.out = N+1)  # equal step sizes in log size
 dx <- x[2]-x[1]
+L <- -x[1]
 w <- exp(x)  # vector of weights
 
 # Select characteristic cell sizes ----
@@ -104,6 +105,8 @@ abar <- 0.7
 # This determines the steady-state value of Nu, by solving eq.(2.11) for N
 Nu <- abar*r/(a_inf-abar)
 
+m <- 0.25
+
 # Cell growth rate ----
 # See eq.(2.5)
 alpha <- 0.85; b <- 0.5; beta <- 1;
@@ -129,9 +132,9 @@ S <- function(x) {
 
 # Calculate the analytic steady-state solution ----
 # This uses the expressions (4.16) to (4.21)
-sol <- steady_state(w, gv, k, wa, q, delta)
+sol <- steady_state(w, g, k, wa, q, delta)
 psi <- sol[[1]]
-m <- sol[[2]]  # mortality rate
+Nu <- sol[[2]]
 if (length(psi) != N+1) {
     stop("psi has the wrong length.")
 }

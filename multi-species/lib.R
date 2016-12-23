@@ -173,22 +173,3 @@ fourier_interpolate <- function(p, n) {
     }
     f/N
 }
-
-intx <- function(f, x) {
-    # Use trapezoidal rule for integration
-    #
-    # Args:
-    #   f: value of function at points given by x
-    #   x: the points at which the function values are given. Needs to be in
-    #      either increasing or decreasing order.
-    #
-    # Returns:
-    #   vector of values of integral over f at points given by x
-    #
-    # The integration starts at the first value in x, so first
-    # value in the returned vector is zero.
-    
-    idx <- 1:(length(f)-1)
-    dx <- abs(diff(x))
-    c(0,cumsum((f[idx]+f[idx+1])*dx[idx]/2))
-}
