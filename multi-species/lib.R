@@ -72,14 +72,8 @@ evolve_cell_pop <- function(t, x, xs, p0, Nu0, g, k, q, m, dNu, S) {
     
     # Predation
     mkernel <- fft(S(-xa)*wa^(-xi))
-    gkernel <- fft(S(xa)*wa^(gamma-2))
+    gkernel <- fft(epsilon*S(xa)*wa^(gamma-2))
     
-    # Create vectors containing ws^{-\gamma} and wa^{-\gamma}
-    wsgamma <- ws^(-gamma)
-    walgamma <- wal^(gamma)
-    # Create a matrix with N copies of column vector ws^(-xi). This is needed
-    # later to implement the multiplication by ws^(-xi) in the fastest way 
-    wsm <- rep(ws^(-xi), rep(N, Ns))
     # We strip off the last value of everything because that is identical
     # to the first one by periodicity
     ks <- k[-(N+1)]
@@ -89,13 +83,16 @@ evolve_cell_pop <- function(t, x, xs, p0, Nu0, g, k, q, m, dNu, S) {
     # For calculating first derivative by Fourier transform
     k1 <- (2*pi/L)*1i*c(0:(N/2-1),0,(-N/2+1):-1)
     
-    ff <- function(p, gs, pc) {
+    # Create vectors containing powers
+    wsmgamma <- ws^(-gamma)
+    walgamma <- wal^(gamma)
+    wmxi <- wsh^(-xi)
+    womxi <- wsh^(1-xi)
+    wsmxi <- ws^(-xi)
+    
+    ff <- function(p, gs, ms) {
         # Calculate right-hand side of population balance equation
-        -(ks+m)*p +  # linear part
-            # birth part
-            2*L/N*Re(fft(FqR*(fft(ks*p)), inverse = TRUE)/N) +
-            # growth part
-            -Re(fft(fft(gs*p)*k1, inverse=TRUE)/N)/wsh
+        
     }
     
     f <- function(t, pN, parms) {
@@ -106,7 +103,7 @@ evolve_cell_pop <- function(t, x, xs, p0, Nu0, g, k, q, m, dNu, S) {
         pc <- vector("numeric", length=Nal)
         idx <- 1:N
         for (i in 1:Ns) {
-            pc[idx] <- pc[idx] + wsgamma[i]*p[,i]
+            pc[idx] <- pc[idx] + wsmgamma[i]*p[,i]
             idx <- idx + ds
         }
         # Pull out a factor of w^{-\gamma} so that pc is constant in steady state
@@ -115,11 +112,27 @@ evolve_cell_pop <- function(t, x, xs, p0, Nu0, g, k, q, m, dNu, S) {
         pcp <- pc[(Nal-Na+1):Nal]
         pcp[(2*Na-Nal):Na] <- pcp[(2*Na-Nal):Na] + pc[1:(Nal-Na+1)]
         
-        # Calculate growth rate
-        gs <- g(wsh, Nu)
+        # Calculate growth rate 
+        gp <- Re(fft(gkernel*pcp, inverse = TRUE))/Na  # from predation
+        gr <- g(wsh, Nu) # from resource
+        
+        # Calculate death rate
+        mp <- Re(fft(mkernel*pcp, inverse = TRUE))/Na # from predation
         
         # Calculate right-hand side of population balance equation
-        f <- apply(p, 2, ff, gs) * wsm
+        f <- matrix(nrow = N, ncol = Ns)
+        idx <- 1:N
+        for (i in 1:Ns) {
+            gs <- gr + womxi * gp[idx]  # growth rate
+            ms <- m + wmxi * mp[idx]  # mortality rate
+            f[,i] <- wsmxi[i] * (
+                -(ks+ms)*p[,i] +  # linear part
+                # birth part
+                2*L/N*Re(fft(FqR*(fft(ks*p[,i])), inverse = TRUE)/N) +
+                # growth part
+                -Re(fft(fft(gs*p[,i])*k1, inverse=TRUE)/N)/wsh
+            )
+        }
         nutrientGrowth <- dNu(Nu, rbind(0, p))
         # above we added a zero at start of p to give it lenght N+1
         # Return

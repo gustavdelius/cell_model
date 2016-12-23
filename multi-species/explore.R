@@ -1,5 +1,6 @@
 library("rgl")
 source("multi-species/steady_state.R")
+source("multi-species/lib.R")
 
 # Set exponents ----
 xi <- 0.15
@@ -89,12 +90,14 @@ g <- function(w, Nu) {
 gv <- g(w, Nu)
 
 # Predation ----
+epsilon <- 0  # Conversion efficiency
+s0 <- 0  # strength of predation
 betap <- 2
 deltap <- 1
 #
 S <- function(x) {
     # Here we use a smooth bump function
-    s <- exp(-1/(1-((x-betap)/deltap)^2))
+    s <- s0 * exp(-1/(1-((x-betap)/deltap)^2))
     # Make s nonzero only between betap-deltap and betap+deltap
     s[abs(x-betap)>=delta/2] <- 0
     s
