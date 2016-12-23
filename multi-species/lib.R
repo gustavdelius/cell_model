@@ -98,19 +98,7 @@ evolve_cell_pop <- function(t, x, xs, p0, Nu0, g, k, q, m, dNu, S) {
     f <- function(t, pN, parms) {
         p <- matrix(pN[-length(pN)], ncol=Ns)
         Nu <- pN[length(pN)]
-        
-        # Determine community spectrum
-        pc <- vector("numeric", length=Nal)
-        idx <- 1:N
-        for (i in 1:Ns) {
-            pc[idx] <- pc[idx] + wsmgamma[i]*p[,i]
-            idx <- idx + ds
-        }
-        # Pull out a factor of w^{-\gamma} so that pc is constant in steady state
-        pc <- walgamma*pc
-        # Wrap around everything below min(xs)-dxs
-        pcp <- pc[(Nal-Na+1):Nal]
-        pcp[(2*Na-Nal):Na] <- pcp[(2*Na-Nal):Na] + pc[1:(Nal-Na+1)]
+        pcp <- community_spectrum(p)
         
         # Calculate growth rate 
         gp <- Re(fft(gkernel*pcp, inverse = TRUE))/Na  # from predation
@@ -146,6 +134,22 @@ evolve_cell_pop <- function(t, x, xs, p0, Nu0, g, k, q, m, dNu, S) {
     psit[ , -(N+1), ] <- out[ , 2:(ncol(out)-1)]
     psit[ , N+1, ] <- psit[ , 1, ]
     list(psit, Nut)
+}
+
+community_spectrum <- function(p) {
+    # Determine community spectrum
+    pc <- vector("numeric", length=Nal)
+    idx <- 1:N
+    for (i in 1:Ns) {
+        pc[idx] <- pc[idx] + wsmgamma[i]*p[,i]
+        idx <- idx + ds
+    }
+    # Pull out a factor of w^{-\gamma} so that pc is constant in steady state
+    pc <- walgamma*pc
+    # Wrap around everything below min(xs)-dxs
+    pcp <- pc[(Nal-Na+1):Nal]
+    pcp[(2*Na-Nal):Na] <- pcp[(2*Na-Nal):Na] + pc[1:(Nal-Na+1)]
+    pcp
 }
 
 fourier_interpolate <- function(p, n) {
