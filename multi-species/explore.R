@@ -1,157 +1,30 @@
 library("rgl")
 source("multi-species/steady_state.R")
 source("multi-species/lib.R")
-
-# Set exponents ----
-xi <- 0.15
-nu <- 0.85
-gamma <- 1 + nu + xi
-
-# Create cell size grid ----
-wa <- 0.7;  # threshold for duplication
-delta <- 0.2  # width of offspring size distribution
-N <- 32  # Number of steps
-#
-if (N %% 2 > 0) {
-    stop("Our code requires N to be even.")
-}
-wmin <- wa*(1-delta)/2  # Smallest possible cell size
-x <- seq(log(wmin), 0, length.out = N+1)  # equal step sizes in log size
-dx <- x[2]-x[1]
-L <- -x[1]
-w <- exp(x)  # vector of weights
-
-# Select characteristic cell sizes ----
-# ws denotes the species maximum cell size
-# xs denotes the log of the species maximum cell size
-# We space our species equidistant in log size
-Ns <- 100  # Number of species
-ds <- 1  # Number of steps between species
-dxs <- ds * dx  # Spacing of species in log size
-if (dxs %% dx > 0) {
-    stop("Our code needs the spacing in species to be a multiple of the size step size dx.")
-}
-xs <- seq(-(Ns-1)*dxs, 0, length.out=Ns)
-ws <- exp(xs)
-
-# Create x steps for entire community spectrum
-# For now we impose a periodicity where the smallest species is also
-# assumed to sit above the largest by the same distance as between the
-# two smallest species.
-xa <- seq(xs[1]-dxs, 0, by=dx)
-Na <- length(xa)
-if (Na != Ns*ds+1) {
-    stop("The length of xa is wrong.")
-}
-La <- min(xa)
-# Without wrapping around the size spectrum will be longer:
-Nal <- (Ns-1)*ds+N+1
-xal <- seq(xs[1]+x[1], 0, by=dx)
-wal <- exp(xal)
-
-# Create vectors containing powers
-wsmgamma <- ws^(-gamma)
-walgamma <- wal^(gamma)
-# wmxi <- wsh^(-xi)
-# womxi <- wsh^(1-xi)
-wsmxi <- ws^(-xi)
-
-# Nutrient dependent feeding coefficient in growth rate ----
-# See eq.(2.11)
-a_inf <- 2; r <- 100;
-#
-a <- function(Nu) {
-    a_inf*Nu/(r+Nu)
-}
-
-# Nutrient growth rate ----
-# See eq.(2.12) and (2.13)
-rho_0 <- 100; Nu_0 <- 100;
-#
-dNu <- function(Nu, psi) {
-    # Args:
-    #   Nu: Nutrient concentration
-    #   psi: (N+1) x Ns matrix with each column the scaled population of one 
-    #        species
-    integral <- colSums(w^(alpha+1)*psi)*dx
-    rho_0*(1-Nu/Nu_0) - (a(Nu)*sum(ws^(2-xi-gamma)*integral))
-}
-
-# Offspring size distribution ----
-# See eq.(2.9) for the definition of q
-# Here we use a smooth bump function
-qf <- function(w) {
-    qr <- exp(-1/(1-(2/delta*(w-1/2))^2))/0.444*2/delta
-    # Make q nonzero only between (1-delta)/2 and (1+delta)/2
-    qr[abs(w-0.5)>=delta/2] <- 0  
-    # Note that we needed >= instead of just >
-    # to avoid the singularity in the argument to the exponential
-    qr
-}
-q <- qf(w)
-
-# Duplication rate ----
-k_0 <- 10000  # scale
-ke <- 4  # exponent
-# Use a k that stays finite but is large enough to ensure that
-# almost all cells duplicate before reaching w=1
-k <- k_0*(w-wa)^ke
-k[w<wa] <- 0
-
-# Death rate ----
-# We do not specify a death rate but determine it so that the
-# steady-state occurs at a certain intake rate
-abar <- 0.7
-# This determines the steady-state value of Nu, by solving eq.(2.11) for N
-Nu <- abar*r/(a_inf-abar)
-
-m <- 0.25
-
-# Cell growth rate ----
-# See eq.(2.5)
-alpha <- 0.85; b <- 0.5; beta <- 1;
-#
-g <- function(w, Nu) {
-    a(Nu)*w^alpha-b*w^beta
-}
-gv <- g(w, Nu)
-
-# Predation ----
-epsilon <- 0.9  # Conversion efficiency
-s0 <- 0.2  # strength of predation
-betap <- 2
-deltap <- 1
-#
-S <- function(x) {
-    # Here we use a smooth bump function
-    s <- s0 * exp(-1/(1-((x-betap)/deltap)^2))
-    # Make s nonzero only between betap-deltap and betap+deltap
-    s[abs(x-betap)>=delta/2] <- 0
-    s
-}
+source("multi-species/params.R")
 
 # Calculate the analytic steady-state solution ----
 # This uses the expressions (4.16) to (4.21)
-sol <- steady_state(w, g, k, wa, q, delta)
+sol <- steady_state(r)
 psi <- sol[[1]]
 Nu <- sol[[2]]
-if (length(psi) != N+1) {
+if (length(psi) != r$N+1) {
     stop("psi has the wrong length.")
 }
 
 # make a matrix containing Ns steady-state distributions
-psi = matrix(psi, nrow=N+1, ncol=Ns)
+psi = matrix(psi, nrow=r$N+1, ncol=r$Ns)
 
 # Normalise psi so that the nutrient is at steady-state
 # For this we observe that in eq.(2.12) the sigma is proportional to psi
 # So we get \rho and \sigma to cancel by rescaling \psi -> psi * rho/sigma
 # Alternatively see eqs.(5.33)-(5.35)
-integral <- colSums(w^(alpha+1)*psi)*dx
-psi <- psi * rho_0*(1-Nu/Nu_0) / (a(Nu)*sum(ws^(2-xi-gamma)*integral))
+integral <- colSums(r$w^(alpha+1)*psi)*r$dx
+psi <- psi * rho_0*(1-Nu/Nu_0) / (r$a(Nu)*sum(r$ws^(2-r$xi-r$gamma)*integral))
 
 # Plot the single-species solution
 par(mar=c(5,5,1,1))
-plot(w, psi[,1], type="l", lwd=3,
+plot(r$w, psi[,1], type="l", lwd=3,
      xlab="w", ylab=expression(Psi(w)))
 
 # Solve equation ----
@@ -170,7 +43,7 @@ Nu0 <- Nu#*(1+0.05*runif(1))
 #p0[ ,1] <- p0[(N+1):1,1]
 #plot(w, p0[ ,1])
 
-p <- evolve_cell_pop(t, x, xs, p0, Nu0, g, k=k, q=q(w), m, dNu, S)
+p <- evolve_cell_pop(t, p0, Nu0, r)
 psit <- p[[1]]
 Nut <- p[[2]]
 
