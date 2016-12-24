@@ -14,54 +14,54 @@ evolve_cell_pop <- function(t, p0, Nu0, r) {
     #   list of two elements:
     #     Nt x (N+1) x Ns  array of population densities
     #     vector of length Nt containing the nutrient densities
-    N <- r$N
-    Ns <- r$Ns
+    N <- r@N
+    Ns <- r@Ns
     
     # Predation
-    mkernel <- fft(r$S(-r$xa)*exp(r$xa*(-r$xi)))
-    gkernel <- fft(r$epsilon*r$S(r$xa)*exp(r$xa*(r$gamma-2)))
+    mkernel <- fft(r@S(-r@xa)*exp(r@xa*(-r@xi)))
+    gkernel <- fft(r@epsilon*r@S(r@xa)*exp(r@xa*(r@gamma-2)))
     
     # We strip off the last value of everything because that is identical
     # to the first one by periodicity
-    ks <- r$k[-(N+1)]
-    wsh <- r$w[-(N+1)]
+    ks <- r@k[-(N+1)]
+    wsh <- r@w[-(N+1)]
     # fft of offspring size distribution
-    FqR <- fft(r$q[-(N+1)])
+    FqR <- fft(r@q[-(N+1)])
     # For calculating first derivative by Fourier transform
-    k1 <- (2*pi/r$L)*1i*c(0:(N/2-1),0,(-N/2+1):-1)
+    k1 <- (2*pi/r@L)*1i*c(0:(N/2-1),0,(-N/2+1):-1)
     
     # Create vectors containing powers
-    wsmxi <- r$ws^(-r$xi)
-    womxi <- wsh^(1-r$xi)
-    wmxi <- wsh^(-r$xi)
+    wsmxi <- r@ws^(-r@xi)
+    womxi <- wsh^(1-r@xi)
+    wmxi <- wsh^(-r@xi)
     
     f <- function(t, pN, parms) {
-        p <- matrix(pN[-length(pN)], ncol=r$Ns)
+        p <- matrix(pN[-length(pN)], ncol=r@Ns)
         Nu <- pN[length(pN)]
         pcp <- community_spectrum(p, r)
         
         # Calculate growth rate 
-        gp <- Re(fft(gkernel*pcp, inverse = TRUE))/r$Na  # from predation
-        gr <- r$g(Nu, r) # from resource
+        gp <- Re(fft(gkernel*pcp, inverse = TRUE))/r@Na  # from predation
+        gr <- r@g(Nu) # from resource
         
         # Calculate death rate
-        mp <- Re(fft(mkernel*pcp, inverse = TRUE))/r$Na # from predation
+        mp <- Re(fft(mkernel*pcp, inverse = TRUE))/r@Na # from predation
         
         # Calculate right-hand side of population balance equation
         f <- matrix(nrow = N, ncol = Ns)
         idx <- 1:N
         for (i in 1:Ns) {
             gs <- gr + womxi * gp[idx]  # growth rate
-            ms <- r$m + wmxi * mp[idx]  # mortality rate
+            ms <- r@m + wmxi * mp[idx]  # mortality rate
             f[,i] <- wsmxi[i] * (
                 -(ks+ms)*p[,i] +  # linear part
                 # birth part
-                2*r$L/N*Re(fft(FqR*(fft(ks*p[,i])), inverse = TRUE)/N) +
+                2*r@L/N*Re(fft(FqR*(fft(ks*p[,i])), inverse = TRUE)/N) +
                 # growth part
                 -Re(fft(fft(gs*p[,i])*k1, inverse=TRUE)/N)/wsh
             )
         }
-        nutrientGrowth <- r$dNu(Nu, rbind(0, p))
+        nutrientGrowth <- r@dNu(Nu, rbind(0, p))
         # above we added a zero at start of p to give it lenght N+1
         # Return
         list(c(f, nutrientGrowth))
@@ -78,17 +78,17 @@ evolve_cell_pop <- function(t, p0, Nu0, r) {
 
 community_spectrum <- function(p, r) {
     # Determine community spectrum
-    pc <- vector("numeric", length=r$Nal)
-    idx <- 1:r$N
-    for (i in 1:r$Ns) {
-        pc[idx] <- pc[idx] + r$wsmgamma[i]*p[,i]
-        idx <- idx + r$ds
+    pc <- vector("numeric", length=r@Nal)
+    idx <- 1:r@N
+    for (i in 1:r@Ns) {
+        pc[idx] <- pc[idx] + r@wsmgamma[i]*p[,i]
+        idx <- idx + r@ds
     }
     # Pull out a factor of w^{-\gamma} so that pc is constant in steady state
-    pc <- r$walgamma*pc
+    pc <- r@walgamma*pc
     # Wrap around everything below min(xs)-dxs
-    pcp <- pc[(r$Nal-r$Na+1):r$Nal]
-    pcp[(2*r$Na-r$Nal):r$Na] <- pcp[(2*r$Na-r$Nal):r$Na] + pc[1:(r$Nal-r$Na+1)]
+    pcp <- pc[(r@Nal-r@Na+1L):r@Nal]
+    pcp[(2L*r@Na-r@Nal):r@Na] <- pcp[(2L*r@Na-r@Nal):r@Na] + pc[1:(r@Nal-r@Na+1L)]
     pcp
 }
 

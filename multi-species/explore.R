@@ -3,28 +3,30 @@ source("multi-species/steady_state.R")
 source("multi-species/lib.R")
 source("multi-species/params.R")
 
+r <- setParams()
+
 # Calculate the analytic steady-state solution ----
 # This uses the expressions (4.16) to (4.21)
 sol <- steady_state(r)
 psi <- sol[[1]]
 Nu <- sol[[2]]
-if (length(psi) != r$N+1) {
+if (length(psi) != r@N+1) {
     stop("psi has the wrong length.")
 }
 
 # make a matrix containing Ns steady-state distributions
-psi = matrix(psi, nrow=r$N+1, ncol=r$Ns)
+psi = matrix(psi, nrow=r@N+1, ncol=r@Ns)
 
 # Normalise psi so that the nutrient is at steady-state
 # For this we observe that in eq.(2.12) the sigma is proportional to psi
 # So we get \rho and \sigma to cancel by rescaling \psi -> psi * rho/sigma
 # Alternatively see eqs.(5.33)-(5.35)
-integral <- colSums(r$w^(alpha+1)*psi)*r$dx
-psi <- psi * rho_0*(1-Nu/Nu_0) / (r$a(Nu)*sum(r$ws^(2-r$xi-r$gamma)*integral))
+integral <- colSums(r@w^(r@alpha+1)*psi)*r@dx
+psi <- psi * r@rho_0*(1-Nu/r@Nu_0) / (r@a(Nu)*sum(r@ws^(2-r@xi-r@gamma)*integral))
 
 # Plot the single-species solution
 par(mar=c(5,5,1,1))
-plot(r$w, psi[,1], type="l", lwd=3,
+plot(r@w, psi[,1], type="l", lwd=3,
      xlab="w", ylab=expression(Psi(w)))
 
 # Solve equation ----

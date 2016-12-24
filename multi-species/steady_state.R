@@ -5,7 +5,7 @@ steady_state <- function(r) {
     # from the analytic formulae in eqs.(4.16) to (4.21)
     #
     # Args:
-    #   r: object holding parameters of the model
+    #   r: object of class PlanktonParams
     #
     # Value:
     #   List containing
@@ -16,7 +16,7 @@ steady_state <- function(r) {
     # The population density for any other w_* can be obtained by scaling
     # see eqs.(6.1) and (6.2)
     
-    wp <- min(r$w[r$w>=(0.5 + r$delta_q/2)])  # the point at which we glue
+    wp <- min(r@w[r@w>=(0.5 + r@delta_q/2)])  # the point at which we glue
     
     p <- function(Nu0) {
         # Calculate the steady-state solution
@@ -29,34 +29,34 @@ steady_state <- function(r) {
         #   For the correct value of m0 that integral will be equal to 1
         
         # Calculate growth rates for given Nu0
-        gv <- r$g(Nu0, r)
+        gv <- r@g(Nu0)
         
         # Calculate e(w) in eq.(4.16)
-        ep <- (r$k+r$m)/gv
+        ep <- (r@k+r@m)/gv
         # First calculate for w < wp
-        es <- rev(intx(rev(ep[r$w<=wp]), rev(r$w[r$w<=wp])))
+        es <- rev(intx(rev(ep[r@w<=wp]), rev(r@w[r@w<=wp])))
         # then for w >= wp
-        el <- -intx(ep[r$w>=wp], r$w[r$w>=wp])
+        el <- -intx(ep[r@w>=wp], r@w[r@w>=wp])
         # and put the results together
         e <- exp(c(es[-length(es)], el))
         
         # Calculate h(w) in eq.(4.17)
-        hp <- r$k*e/gv
-        hp[r$w < r$w_th] <- 0
-        h <- c(2 * r$L / r$N * 
-                   Re(fft(fft(r$q[1:r$N])*fft(hp[1:r$N]), inverse=TRUE))/r$N,0)
+        hp <- r@k*e/gv
+        hp[r@w < r@w_th] <- 0
+        h <- c(2 * r@L / r@N * 
+                   Re(fft(fft(r@q[1:r@N])*fft(hp[1:r@N]), inverse=TRUE))/r@N,0)
         
         # Calculate Theta in eq.(4.21). Because h/e is zero beyond w=wp, we simply
         # integrate up to w=1. Then Theta is automatically 1 for w>wp when the
         # boundary condition (4.18) is satisfied.
         he <- h/e
         he[e==0] <- 0  # Removes the infinity from division by zero
-        Theta <- intx(he, r$w) 
+        Theta <- intx(he, r@w) 
         # The boundary condition (4.18) is satisfied iff b=1
-        b <- Theta[length(r$w)]
+        b <- Theta[length(r@w)]
         
         # Use eq.(4.20) to calculate the solution.
-        Psi <- gv[r$w==wp]*e*Theta/gv
+        Psi <- gv[r@w==wp]*e*Theta/gv
         
         return(list(Psi, b))
     }
