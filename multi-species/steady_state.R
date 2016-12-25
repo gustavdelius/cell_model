@@ -22,11 +22,11 @@ steady_state <- function(r) {
         # Calculate the steady-state solution
         #
         # Args:
-        #   m0: scalar giving the constant mortality rate
+        #   Nu0: nutrient concentration
         #
         # Returns:
         #   List containing the solution and the integral over h/e 
-        #   For the correct value of m0 that integral will be equal to 1
+        #   For the correct value of Nu0 that integral will be equal to 1
         
         # Calculate growth rates for given Nu0
         gv <- r@g(Nu0)

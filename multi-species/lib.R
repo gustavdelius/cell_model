@@ -48,7 +48,7 @@ evolve_cell_pop <- function(t, p0, Nu0, r) {
         mp <- Re(fft(mkernel*pcp, inverse = TRUE))/r@Na # from predation
         
         # Calculate right-hand side of population balance equation
-        f <- matrix(nrow = N, ncol = Ns)
+        f <- matrix(0, nrow = N, ncol = Ns)
         idx <- 1:N
         for (i in 1:Ns) {
             gs <- gr + womxi * gp[idx]  # growth rate
@@ -86,9 +86,10 @@ community_spectrum <- function(p, r) {
     }
     # Pull out a factor of w^{-\gamma} so that pc is constant in steady state
     pc <- r@walgamma*pc
-    # Wrap around everything below min(xs)-dxs
+    # Wrap around by moving the lowest Nal-Na entries to the top
     pcp <- pc[(r@Nal-r@Na+1L):r@Nal]
-    pcp[(2L*r@Na-r@Nal):r@Na] <- pcp[(2L*r@Na-r@Nal):r@Na] + pc[1:(r@Nal-r@Na+1L)]
+    top <- 2L*r@Na-r@Nal+1L:r@Na  # the top Nal-Na indices
+    pcp[top] <- pcp[top] + pc[1:(r@Nal-r@Na)]
     pcp
 }
 
@@ -96,17 +97,17 @@ fourier_interpolate <- function(p, n) {
     # Perform a Fourier interpolation
     # Args:
     #   p: vector of values of function at equally spaced steps,
-    #      including both endpoints of the periodic interval
+    #      excluding the right endpoint
     #   n: desired length of output vector
     # Value:
     #   Vector of n values of Fourier interpolation at n equally
-    #     spaced points, including both endpoints.
+    #     spaced points, excluding the right endpoints.
     if (p[length(p)] != p[1]) {
         stop("The function is not periodic or you did not include both endpoints.")
     }
-    N <- length(p)-1
-    x <- seq(0, 1, length.out=n)
-    fp <- fft(p[1:N])
+    N <- length(p)
+    x <- seq(0, 1-1/n, length.out=n)
+    fp <- fft(p)
     f <- rep(Re(fp[1]), length(x))
     for (j in 2:(N/2+1)) {
         f <- f + 2*(Re(fp[j])*cos(2*pi*(j-1)*x) - Im(fp[j])*sin(2*pi*(j-1)*x))

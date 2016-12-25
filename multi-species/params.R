@@ -112,11 +112,12 @@ setMethod("initialize", "PlanktonParams",
         # Create grids ----
         # Within-species cell size grid
         wmin <- r@w_th*(1-r@delta_q)/2  # Smallest possible cell size
+        xmin <- log(wmin)
         # equal step sizes in log size
-        r@x <- seq(log(wmin), 0, length.out = r@N+1)
-        r@dx <- r@x[2]-r@x[1]
+        r@dx <- -xmin/r@N
+        r@x <- seq(log(wmin), -r@dx, by=r@dx)
         r@w <- exp(r@x)  # vector of weights
-        r@L <- -r@x[1]
+        r@L <- -xmin
         
         # Characteristic cell size grid
         # ws denotes the species maximum cell size
@@ -130,11 +131,11 @@ setMethod("initialize", "PlanktonParams",
         # For now we impose a periodicity where the smallest species is also
         # assumed to sit above the largest by the same distance as between the
         # two smallest species.
-        r@xa <- seq(r@xs[1]-r@dxs, 0, by=r@dx)
+        r@xa <- seq(r@xs[1]-r@dxs, -r@dx, by=r@dx)
         r@Na <- length(r@xa)
         # Without wrapping around the size spectrum will be longer:
-        r@Nal <- (r@Ns-1L)*r@ds+r@N+1L
-        r@xal <- seq(r@xs[1]+r@x[1], 0, by=r@dx)
+        r@Nal <- (r@Ns-1L)*r@ds+r@N
+        r@xal <- seq(r@xs[1]+r@x[1], -r@dx, by=r@dx)
         
         # Create vectors containing powers
         r@wsmgamma <- exp(r@xs*(-r@gamma))

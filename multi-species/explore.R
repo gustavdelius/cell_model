@@ -10,12 +10,9 @@ r <- setParams()
 sol <- steady_state(r)
 psi <- sol[[1]]
 Nu <- sol[[2]]
-if (length(psi) != r@N+1) {
-    stop("psi has the wrong length.")
-}
 
 # make a matrix containing Ns steady-state distributions
-psi = matrix(psi, nrow=r@N+1, ncol=r@Ns)
+psi = matrix(psi, nrow=r@N, ncol=r@Ns)
 
 # Normalise psi so that the nutrient is at steady-state
 # For this we observe that in eq.(2.12) the sigma is proportional to psi
