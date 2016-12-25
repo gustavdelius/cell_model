@@ -1,18 +1,15 @@
 library("deSolve")
 
-evolve_cell_pop <- function(t, p0, Nu0, r) {
+evolve_cell_pop <- function(r) {
     # Evolve cell population density using the population balance equation
     # see eq.(2.10)
     #
     # Args:
-    #   t: vector of times at which to return the population density
-    #   p0 : (N+1) x Ns matrix of initial population densities
-    #   Nu0: initial nutrient concentration
-    #   r: object with parameters
+    #   r: PlanktonSim object
     #
     # Value:
     #   list of two elements:
-    #     Nt x (N+1) x Ns  array of population densities
+    #     Nt x N x Ns  array of population densities
     #     vector of length Nt containing the nutrient densities
     N <- r@N
     Ns <- r@Ns
@@ -21,19 +18,16 @@ evolve_cell_pop <- function(t, p0, Nu0, r) {
     mkernel <- fft(r@S(-r@xa)*exp(r@xa*(-r@xi)))
     gkernel <- fft(r@epsilon*r@S(r@xa)*exp(r@xa*(r@gamma-2)))
     
-    # We strip off the last value of everything because that is identical
-    # to the first one by periodicity
-    ks <- r@k[-(N+1)]
-    wsh <- r@w[-(N+1)]
+    ks <- r@k(r@x)
     # fft of offspring size distribution
-    FqR <- fft(r@q[-(N+1)])
+    FqR <- fft(r@q(r@x))
     # For calculating first derivative by Fourier transform
     k1 <- (2*pi/r@L)*1i*c(0:(N/2-1),0,(-N/2+1):-1)
     
     # Create vectors containing powers
     wsmxi <- r@ws^(-r@xi)
-    womxi <- wsh^(1-r@xi)
-    wmxi <- wsh^(-r@xi)
+    womxi <- r@w^(1-r@xi)
+    wmxi <- r@w^(-r@xi)
     
     f <- function(t, pN, parms) {
         p <- matrix(pN[-length(pN)], ncol=r@Ns)
@@ -42,7 +36,7 @@ evolve_cell_pop <- function(t, p0, Nu0, r) {
         
         # Calculate growth rate 
         gp <- Re(fft(gkernel*pcp, inverse = TRUE))/r@Na  # from predation
-        gr <- r@g(Nu) # from resource
+        gr <- r@g(r@w, Nu) # from resource
         
         # Calculate death rate
         mp <- Re(fft(mkernel*pcp, inverse = TRUE))/r@Na # from predation
@@ -58,21 +52,23 @@ evolve_cell_pop <- function(t, p0, Nu0, r) {
                 # birth part
                 2*r@L/N*Re(fft(FqR*(fft(ks*p[,i])), inverse = TRUE)/N) +
                 # growth part
-                -Re(fft(fft(gs*p[,i])*k1, inverse=TRUE)/N)/wsh
+                -Re(fft(fft(gs*p[,i])*k1, inverse=TRUE)/N)/r@w
             )
         }
-        nutrientGrowth <- r@dNu(Nu, rbind(0, p))
-        # above we added a zero at start of p to give it lenght N+1
-        # Return
+        nutrientGrowth <- r@dNu(r@w, Nu, p, r@dxs)
+
         list(c(f, nutrientGrowth))
     }
     
-    out <- ode(y=c(p0[-(N+1),], Nu0), times=t, func=f)
+    out <- ode(y=c(r@p0, r@Nu0), times=r@t, func=f)
     
     Nut <- out[ , ncol(out)]
-    psit <- array(dim=c(length(t), N+1, Ns))
-    psit[ , -(N+1), ] <- out[ , 2:(ncol(out)-1)]
-    psit[ , N+1, ] <- psit[ , 1, ]
+    # The following is obsolete code that was necessary when I wanted to
+    # include the right boundary in the return value
+    # psit <- array(dim=c(length(t), N+1, Ns))
+    # psit[ , -(N+1), ] <- out[ , 2:(ncol(out)-1)]
+    # psit[ , N+1, ] <- psit[ , 1, ]
+    psit <- out[ , 2:(N+1)]
     list(psit, Nut)
 }
 
@@ -102,9 +98,6 @@ fourier_interpolate <- function(p, n) {
     # Value:
     #   Vector of n values of Fourier interpolation at n equally
     #     spaced points, excluding the right endpoints.
-    if (p[length(p)] != p[1]) {
-        stop("The function is not periodic or you did not include both endpoints.")
-    }
     N <- length(p)
     x <- seq(0, 1-1/n, length.out=n)
     fp <- fft(p)
