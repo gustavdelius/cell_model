@@ -1,8 +1,38 @@
+#' An S4 class to represent the simulation of a plankton model
+#' 
+#' @slot N Number of steps within-species
+#' @slot Ns Number of species
+#' @slot SpeciesSpacing Number of species per length of species 
+#' 
+#' @slot x  Log sizes within a species.
+#' @slot dx log step size within a species.
+#' @slot w  Sizes within a species.
+#' @slot ds Number of steps between species.
+#' @slot dxs Log distance between species.
+#' @slot xs Log maximum sizes of species.
+#' @slot ws Maximum sizes of species.
+#' @slot xa Log sizes within community.
+#' @slot Na Number of steps in community spectrum.
+#' @slot xal Log sizes in community spectrum before periodic wrapping.
+#' @slot Nal Number of steps in community spectrum before periodic wrapping.
+#' @slot wsmgamma \code{ws^(-gamma)}
+#' @slot walgamma \code{wal^(gamma)}
+#' @slot tmax Time until which to run simulation. If the vector \code{t} of
+#' times is supplied than \code{tmax} is set from that.
+#' @slot Nt Number of time steps at which to return population density.
+#' If the vector \code{t} is supplied than \code{Nt} is set from that.
+#' @slot t vector of \code{Nt} time steps between 0 and \code{tmax}. If this 
+#' is not supplied then the default is a vector of \code{Nt} equally-spaced
+#' time points between 0 and \code{tmax}.
+#' @slot p0 Matrix (N x Ns) of initial population densities.
+#' @slot Nu0 Initial resource concentration.
+#' @slot p Array (Nt x N x Ns) of simulated population densities.
+#' @slot Nu Vector of simulated nutrient concentrations.
 simulate <- setClass("PlanktonSim",
     slots = c(
-        N  = "integer",  # Number of steps within-species
-        Ns = "integer",  # Number of species
-        SpeciesSpacing = "integer",  # Number of species per length of species 
+        N  = "integer",
+        Ns = "integer",
+        SpeciesSpacing = "integer",
         
         # Grids
         # within a species
@@ -87,7 +117,12 @@ setMethod("initialize", "PlanktonSim",
         r@walgamma <- exp(r@xal*(r@gamma))
         
         # Times
-        r@t <- seq(0, r@tmax, by=r@tmax/r@Nt)
+        if (length(r@t) == 0) {
+            r@t <- seq(0, r@tmax, by=r@tmax/r@Nt)
+        } else {
+            r@Nt <- length(r@t)
+            r@tmax <- r@t[r@Nt]
+        }
         
         # Population
         if (length(r@p0) == 0) {

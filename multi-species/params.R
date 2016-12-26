@@ -1,3 +1,48 @@
+#' An S4 class to represent the parameters of a plankton model
+#' 
+#' @slot xi Exponent for allometric scaling of mortality. Default 0.15
+#' @slot nu Exponent in scaling of predation kernel. Default 0.85
+#' @slot gamma Exponent in across-species steady-state power-law. 
+#' Equal to 1+nu+xi.
+#' @slot a_inf Nutrient consumption rate when unlimited nutrient supply.
+#' @slot rr Half saturation level at which nutrient consumption is half of the
+#' maximal value \code{a_inf}.
+#' @slot rho_0 Nutrient replenishment rate when nutrient is low.
+#' @slot Nu_0 Nutrient carrying capacity in absence of consumption.
+#' @slot w_th Threshold size for duplication. Cells smaller than \code{w_th}
+#' can not duplicate.
+#' @slot delta_q Width of offspring size distribution. Daughter cells can have 
+#' a weight that lies between \code{(1-delta_q)/2} and \code{(1+delta_q)/2} 
+#' of their parent's weight.
+#' @slot k_0 Overall coefficient of duplication rate function.
+#' @slot ke Exponent in duplication rate function.
+#' @slot alpha Allometric exponent of nutrient intake rate.
+#' @slot beta Allometric exponent of metabolic loss rate.
+#' @slot b Coefficient of metabolic loss rate.
+#' @slot m Coefficient of death rate.
+#' @slot epsilon Conversion efficiency of prey mass into predator mass.
+#' @slot s0 Coefficient of predation kernel.
+#' @slot beta_p Center of predation kernel.
+#' @slot delta_p Width of predation kernel.
+#' @slot a Function \code{a(Nu)} giving nutrient intake rate coefficient as a 
+#' function of nutrient concentration.
+#' @slot dNu Function \code{dNu(w, Nu, psi, dxs)} giving the nutrient growth
+#' rate for a cell of weight \code{w} as a function of nutrient concentration
+#' \code{Nu} and plankton population \code{psi}, where \code{dxs} is the 
+#' spacing between species in log-size.
+#' @slot k Function \code{k(w)} giving duplication rate for a cell of weight 
+#' \code{w}
+#' @slot g Function \code{g(w, Nu)} giving the growth due to resource
+#' consumption for a cell of weight \code{w} as a function of resource 
+#' concentration \code{Nu}.
+#' @slot s Function \code{s(x)} giving the predation kernel as a function of
+#' the logarithm \code{x} of the predator/prey mass ratio. The predation kernel
+#' needs to be multiplied by the allometric scaling factor and the predator
+#' and prey densities to give the actual predation rate.
+#' @slot L Length of single-cell size distribution in log-size.
+#' @slot wBar Weights at which the steady-state population is given.
+#' @slot psiBar Population density at steady state.
+#' @slot NuBar Nutrient concentration at steady state.
 setParams <- setClass("PlanktonParams",
     slots = c(
         # Exponents
@@ -13,10 +58,10 @@ setParams <- setClass("PlanktonParams",
         Nu_0  = "numeric",
         
         # Duplication 
-        w_th    = "numeric",  # threshold for duplication
-        delta_q = "numeric",  # width of offspring size distribution
-        k_0     = "numeric",  # scale
-        ke      = "numeric",  # exponent
+        w_th    = "numeric",
+        delta_q = "numeric",
+        k_0     = "numeric",
+        ke      = "numeric",
         
         # Cell growth rate (see eq.(2.5))
         alpha = "numeric",
@@ -27,10 +72,10 @@ setParams <- setClass("PlanktonParams",
         m = "numeric",
         
         # Predation
-        epsilon = "numeric",  # Conversion efficiency
-        s0      = "numeric",  # strength of predation
-        beta_p  = "numeric" , # log of predator/prey mass ratio
-        delta_p = "numeric",  # width of predation kernel
+        epsilon = "numeric", 
+        s0      = "numeric",
+        beta_p  = "numeric" ,
+        delta_p = "numeric",
         
         # Rates
         a   = "function",
@@ -78,7 +123,7 @@ setParams <- setClass("PlanktonParams",
         # Death rate
         m = 0.25,
         
-        # Predation ----
+        # Predation
         epsilon = 0.9,  # Conversion efficiency
         s0      = 0.2,  # strength of predation
         beta_p  = 2,    # log of predator/prey mass ratio
@@ -86,6 +131,7 @@ setParams <- setClass("PlanktonParams",
     )
 )
 
+# Initialise object ----
 setMethod("initialize", "PlanktonParams", 
     function(.Object, ...) {
         .Object <- callNextMethod()

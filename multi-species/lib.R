@@ -1,16 +1,13 @@
 library("deSolve")
 
+#' Evolve cell population density using the population balance equation
+#' 
+#' see eq.(2.10)
+#' @param r PlanktonSim object
+#' @return list of two elements:
+#'     Nt x N x Ns  array of population densities
+#'     vector of length Nt containing the nutrient densities
 evolve_cell_pop <- function(r) {
-    # Evolve cell population density using the population balance equation
-    # see eq.(2.10)
-    #
-    # Args:
-    #   r: PlanktonSim object
-    #
-    # Value:
-    #   list of two elements:
-    #     Nt x N x Ns  array of population densities
-    #     vector of length Nt containing the nutrient densities
     N <- r@N
     Ns <- r@Ns
     
@@ -72,8 +69,16 @@ evolve_cell_pop <- function(r) {
     list(psit, Nut)
 }
 
+#' Determine community spectrum
+#' 
+#' Adds together the population density of all species
+#' wrapped around assuming periodicity in species size
+#' Used in \code{\link{evolve_cel_pop}}
+#' 
+#' @param p matrix of population densities (N x Ns)
+#' @param r PlanktonParams object
+#' @return A vector of community population densities at points \code{xa}
 community_spectrum <- function(p, r) {
-    # Determine community spectrum
     pc <- vector("numeric", length=r@Nal)
     idx <- 1:r@N
     for (i in 1:r@Ns) {
@@ -89,15 +94,18 @@ community_spectrum <- function(p, r) {
     pcp
 }
 
+#' Perform a Fourier interpolation
+#' 
+#' Takes a discretisation at any number of equally-spaced points, performs
+#' a Fast Fourier Transform on it and then does a slow inverse Fourier 
+#' transform evaluated at the desired number of equally-spaced points.
+#' 
+#' @param p vector of values of function at equally spaced steps, excluding 
+#'          the right endpoint
+#' @param n desired length of output vector
+#' @return Vector of n values of Fourier interpolation at n equally
+#'     spaced points, excluding the right endpoints.
 fourier_interpolate <- function(p, n) {
-    # Perform a Fourier interpolation
-    # Args:
-    #   p: vector of values of function at equally spaced steps,
-    #      excluding the right endpoint
-    #   n: desired length of output vector
-    # Value:
-    #   Vector of n values of Fourier interpolation at n equally
-    #     spaced points, excluding the right endpoints.
     N <- length(p)
     x <- seq(0, 1-1/n, length.out=n)
     fp <- fft(p)
