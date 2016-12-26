@@ -1,0 +1,7 @@
+*.tex
+*.bbl
+*.blg
+*.log
+*.gz
+*.toc
+/cache
