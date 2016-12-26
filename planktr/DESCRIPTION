@@ -1,0 +1,25 @@
+Package: planktr
+Type: Package
+Title: What the Package Does (Title Case)
+Version: 0.1.0
+Author: Gustav Delius
+Maintainer: Gustav Delius <gustav.delius@york.ac.uk>
+Description: More about what it does (maybe more than one line)
+    Use four spaces when indenting paragraphs within the Description.
+License: What license is it under?
+Encoding: UTF-8
+LazyData: true
+Imports:
+    deSolve,
+    rgl
+Suggests:
+    testthat,
+    roxygen2,
+    knitr
+VignetteBuilder: knitr
+Collate:
+    'lib.R'
+    'params.R'
+    'sim.R'
+    'steady_state.R'
+RoxygenNote: 5.0.1

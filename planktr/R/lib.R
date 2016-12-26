@@ -1,7 +1,5 @@
-library("deSolve")
-
 #' Evolve cell population density using the population balance equation
-#' 
+#'
 #' see eq.(2.10)
 #' @param r PlanktonSim object
 #' @return list of two elements:
@@ -10,34 +8,34 @@ library("deSolve")
 evolve_cell_pop <- function(r) {
     N <- r@N
     Ns <- r@Ns
-    
+
     # Predation
     mkernel <- fft(r@S(-r@xa)*exp(r@xa*(-r@xi)))
     gkernel <- fft(r@epsilon*r@S(r@xa)*exp(r@xa*(r@gamma-2)))
-    
+
     ks <- r@k(r@x)
     # fft of offspring size distribution
     FqR <- fft(r@q(r@x))
     # For calculating first derivative by Fourier transform
     k1 <- (2*pi/r@L)*1i*c(0:(N/2-1),0,(-N/2+1):-1)
-    
+
     # Create vectors containing powers
     wsmxi <- r@ws^(-r@xi)
     womxi <- r@w^(1-r@xi)
     wmxi <- r@w^(-r@xi)
-    
+
     f <- function(t, pN, parms) {
         p <- matrix(pN[-length(pN)], ncol=r@Ns)
         Nu <- pN[length(pN)]
         pcp <- community_spectrum(p, r)
-        
-        # Calculate growth rate 
+
+        # Calculate growth rate
         gp <- Re(fft(gkernel*pcp, inverse = TRUE))/r@Na  # from predation
         gr <- r@g(r@w, Nu) # from resource
-        
+
         # Calculate death rate
         mp <- Re(fft(mkernel*pcp, inverse = TRUE))/r@Na # from predation
-        
+
         # Calculate right-hand side of population balance equation
         f <- matrix(0, nrow = N, ncol = Ns)
         idx <- 1:N
@@ -56,9 +54,9 @@ evolve_cell_pop <- function(r) {
 
         list(c(f, nutrientGrowth))
     }
-    
+
     out <- ode(y=c(r@p0, r@Nu0), times=r@t, func=f)
-    
+
     Nut <- out[ , ncol(out)]
     # The following is obsolete code that was necessary when I wanted to
     # include the right boundary in the return value
@@ -70,11 +68,11 @@ evolve_cell_pop <- function(r) {
 }
 
 #' Determine community spectrum
-#' 
+#'
 #' Adds together the population density of all species
 #' wrapped around assuming periodicity in species size
 #' Used in \code{\link{evolve_cel_pop}}
-#' 
+#'
 #' @param p matrix of population densities (N x Ns)
 #' @param r PlanktonParams object
 #' @return A vector of community population densities at points \code{xa}
@@ -95,12 +93,12 @@ community_spectrum <- function(p, r) {
 }
 
 #' Perform a Fourier interpolation
-#' 
+#'
 #' Takes a discretisation at any number of equally-spaced points, performs
-#' a Fast Fourier Transform on it and then does a slow inverse Fourier 
+#' a Fast Fourier Transform on it and then does a slow inverse Fourier
 #' transform evaluated at the desired number of equally-spaced points.
-#' 
-#' @param p vector of values of function at equally spaced steps, excluding 
+#'
+#' @param p vector of values of function at equally spaced steps, excluding
 #'          the right endpoint
 #' @param n desired length of output vector
 #' @return Vector of n values of Fourier interpolation at n equally

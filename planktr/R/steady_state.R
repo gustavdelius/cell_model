@@ -1,7 +1,5 @@
-source("multi-species/lib.R")
-
 steady_state <- function(r) {
-    # Determine steady state cell size distribution 
+    # Determine steady state cell size distribution
     # from the analytic formulae in eqs.(4.16) to (4.21)
     #
     # Args:
@@ -9,17 +7,17 @@ steady_state <- function(r) {
     #
     # Value:
     #   List containing
-    #     vector of steady-state population densities 
+    #     vector of steady-state population densities
     #     nutrient concentration at steady state
-    
+
     # Without loss of generality we can set w_* = 1 so that x=w/w_*=w
     # The population density for any other w_* can be obtained by scaling
     # see eqs.(6.1) and (6.2)
-    
+
     wp <- min(r@wBar[r@wBar>=(0.5 + r@delta_q/2)])  # the point at which we glue
     kv <- r@k(r@wBar)
     qv <- r@q(r@wBar)
-    
+
     p <- function(Nu0) {
         # Calculate the steady-state solution
         #
@@ -27,13 +25,13 @@ steady_state <- function(r) {
         #   Nu0: nutrient concentration
         #
         # Returns:
-        #   List containing the solution and the integral over h/e 
+        #   List containing the solution and the integral over h/e
         #   For the correct value of Nu0 that integral will be equal to 1
-        
+
         w <- r@wBar
         # Calculate growth rates for given Nu0
         gv <- r@g(w, Nu0)
-        
+
         # Calculate e(w) in eq.(4.16)
         ep <- (kv+r@m)/gv
         # First calculate for w < wp
@@ -42,7 +40,7 @@ steady_state <- function(r) {
         el <- -intx(ep[w>=wp], w[w>=wp])
         # and put the results together
         e <- exp(c(es[-length(es)], el))
-        
+
         # Calculate h(w) in eq.(4.17)
         hp <- kv*e/gv
         hp[w < r@w_th] <- 0
@@ -50,26 +48,26 @@ steady_state <- function(r) {
         for (i in 1:length(w)) {
             h[i] <- 2*intx(hp*r@q(w[i]/w)/w, w)[length(w)-1]
         }
-        
+
         # Calculate Theta in eq.(4.21). Because h/e is zero beyond w=wp, we simply
         # integrate up to w=1. Then Theta is automatically 1 for w>wp when the
         # boundary condition (4.18) is satisfied.
         he <- h/e
         he[e==0] <- 0  # Removes the infinity from division by zero
-        Theta <- intx(he, w) 
+        Theta <- intx(he, w)
         # The boundary condition (4.18) is satisfied iff b=1
         b <- Theta[length(w)]
-        
+
         # Use eq.(4.20) to calculate the solution.
         Psi <- gv[w==wp]*e*Theta/gv
-        
+
         return(list(Psi, b))
     }
-    
+
     # Find the mortality rate constant that satisfies the boundary condition
     # in eq. (4.18)
     Nu <- uniroot(function(Nu0) p(Nu0)[[2]]-1, lower=1, upper=100)[["root"]]
-    
+
     # Calculate and return the solution
     psi <- p(Nu)[[1]]
     list(psi, Nu)
@@ -88,7 +86,7 @@ intx <- function(f, x) {
     #
     # The integration starts at the first value in x, so first
     # value in the returned vector is zero.
-    
+
     idx <- 1:(length(f)-1)
     dx <- abs(diff(x))
     c(0,cumsum((f[idx]+f[idx+1])*dx[idx]/2))

@@ -1,9 +1,9 @@
 #' An S4 class to represent the simulation of a plankton model
-#' 
+#'
 #' @slot N Number of steps within-species
 #' @slot Ns Number of species
-#' @slot SpeciesSpacing Number of species per length of species 
-#' 
+#' @slot SpeciesSpacing Number of species per length of species
+#'
 #' @slot x  Log sizes within a species.
 #' @slot dx log step size within a species.
 #' @slot w  Sizes within a species.
@@ -21,19 +21,20 @@
 #' times is supplied than \code{tmax} is set from that.
 #' @slot Nt Number of time steps at which to return population density.
 #' If the vector \code{t} is supplied than \code{Nt} is set from that.
-#' @slot t vector of \code{Nt} time steps between 0 and \code{tmax}. If this 
+#' @slot t vector of \code{Nt} time steps between 0 and \code{tmax}. If this
 #' is not supplied then the default is a vector of \code{Nt} equally-spaced
 #' time points between 0 and \code{tmax}.
 #' @slot p0 Matrix (N x Ns) of initial population densities.
 #' @slot Nu0 Initial resource concentration.
 #' @slot p Array (Nt x N x Ns) of simulated population densities.
 #' @slot Nu Vector of simulated nutrient concentrations.
+#' @include params.R
 simulate <- setClass("PlanktonSim",
     slots = c(
         N  = "integer",
         Ns = "integer",
         SpeciesSpacing = "integer",
-        
+
         # Grids
         # within a species
         x  = "numeric",
@@ -53,12 +54,12 @@ simulate <- setClass("PlanktonSim",
         # some powers of weights
         wsmgamma = "numeric",
         walgamma = "numeric",
-        
+
         # Times
         tmax = "numeric",
         Nt   = "integer",
         t    = "numeric",
-        
+
         # Population
         p0  = "matrix",
         Nu0 = "numeric",
@@ -75,11 +76,11 @@ simulate <- setClass("PlanktonSim",
     )
 )
 
-setMethod("initialize", "PlanktonSim", 
+setMethod("initialize", "PlanktonSim",
     function(.Object, ...) {
         .Object <- callNextMethod()
         r <- .Object
-        
+
         # Create grids ----
         # Within-species cell size grid
         wmin <- r@w_th*(1-r@delta_q)/2  # Smallest possible cell size
@@ -89,7 +90,7 @@ setMethod("initialize", "PlanktonSim",
         r@x <- seq(log(wmin), -r@dx, by=r@dx)
         r@w <- exp(r@x)  # vector of weights
         r@L <- -xmin
-        
+
         # Characteristic cell size grid
         # ws denotes the species maximum cell size
         # xs denotes the log of the species maximum cell size
@@ -101,7 +102,7 @@ setMethod("initialize", "PlanktonSim",
         r@dxs <- r@ds * r@dx  # Spacing of species in log size
         r@xs  <- seq(-(r@Ns-1)*r@dxs, 0, length.out=r@Ns)
         r@ws  <- exp(r@xs)
-        
+
         # Create x steps for entire community spectrum
         # For now we impose a periodicity where the smallest species is also
         # assumed to sit above the largest by the same distance as between the
@@ -111,11 +112,11 @@ setMethod("initialize", "PlanktonSim",
         # Without wrapping around the size spectrum will be longer:
         r@Nal <- (r@Ns-1L)*r@ds+r@N
         r@xal <- seq(r@xs[1]+r@x[1], -r@dx, by=r@dx)
-        
+
         # Create vectors containing powers
         r@wsmgamma <- exp(r@xs*(-r@gamma))
         r@walgamma <- exp(r@xal*(r@gamma))
-        
+
         # Times
         if (length(r@t) == 0) {
             r@t <- seq(0, r@tmax, by=r@tmax/r@Nt)
@@ -123,7 +124,7 @@ setMethod("initialize", "PlanktonSim",
             r@Nt <- length(r@t)
             r@tmax <- r@t[r@Nt]
         }
-        
+
         # Population
         if (length(r@p0) == 0) {
             # if no initial population is provided use steady-state solution
@@ -136,7 +137,7 @@ setMethod("initialize", "PlanktonSim",
             # So we get \rho and \sigma to cancel by rescaling \psi -> psi * rho/sigma
             # Alternatively see eqs.(5.33)-(5.35)
             integral <- colSums(r@w^(r@alpha+1)*p0)*r@dx
-            r@p0 <- p0 * r@rho_0*(1-r@NuBar/r@Nu_0) / 
+            r@p0 <- p0 * r@rho_0*(1-r@NuBar/r@Nu_0) /
                 (r@a(r@NuBar)*sum(r@ws^(2-r@xi-r@gamma)*integral))
         } else if ((length(r@p0) != r@N) && (length(r@p0) != (r@N * r@Ns))) {
             # If only a single species is provided we will replicate this
@@ -145,16 +146,16 @@ setMethod("initialize", "PlanktonSim",
         } else {
             r@p0 = matrix(p0, nrow=r@N, ncol=r@Ns)
         }
-        
+
         if (length(r@Nu0) == 0) {
             # If no initial resource is given, use steady-state resource
             r@Nu0 <- r@NuBar
         }
-        
+
         p <- evolve_cell_pop(r)
         r@p <- p[[1]]
         r@Nu <- p[[2]]
-        
+
         return(r)
     }
 )
