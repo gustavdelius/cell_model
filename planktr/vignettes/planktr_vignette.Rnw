@@ -1,0 +1,183 @@
+% !Rnw weave = knitr
+
+\documentclass{article}
+
+%\VignetteIndexEntry{Introduction to mizer}
+%\VignettePackage{mizer}
+%\VignetteEngine{knitr::knitr}
+
+\setlength{\parindent}{0pt}	% Eliminate the indent at the beginning of a new paragraph
+\setcounter{secnumdepth}{3}	% Elimate the section numbering starting from a specific depth (see WikiBook)
+\usepackage[round,sort]{natbib}
+\usepackage[english]{babel} % No idea what this is but stops the et~al problem from natbib
+\usepackage{fixltx2e}
+\usepackage{graphicx}	% To manage external pictures
+\usepackage{float}
+\usepackage{subfig}	% To add subfigures within figures, with labels (see WikiBooks)
+\usepackage{tabularx}
+\usepackage{verbatim}
+\usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
+\usepackage{amssymb,amsbsy,amsmath}
+\usepackage[left=3cm,top=3cm,bottom=3.5cm,right=3cm]{geometry}	% For easy management of document margins
+\usepackage{fancyhdr} % To customize the header/footer (see WikiBooks)
+\usepackage{rotating}
+\usepackage{authblk}
+\numberwithin{equation}{section}	% Equation numbers relative to sections
+
+%% Set PDF 1.5 and compression, including object compression
+%% Needed for MiKTeX -- most other distributions default to this
+\ifx\pdfoutput\undefined
+\else
+  \ifx\pdfoutput\relax
+  \else
+    \ifnum\pdfoutput>0
+      % PDF output
+      \pdfminorversion=5
+      \pdfcompresslevel=9
+      \pdfobjcompresslevel=2
+    \fi
+  \fi
+\fi
+
+% ---------------------------------------------------------------------------------------------------------------------------------------
+
+\newcommand{\code}[1]{{\texttt{#1}}}
+\newcommand{\pkg}[1]{{\texttt{#1}}}
+\newcommand{\class}[1]{{\textit{#1}}}
+\newcommand{\R}{{\normalfont\textsf{R }}{}}
+\newcommand{\args}[1]{{\texttt{#1}}}
+
+\newcommand{\ws}{w_*}
+\newcommand{\w}{\omega}
+\newcommand{\wmin}{\w_{\rm{min}}}
+\newcommand{\xmin}{x_{\rm{min}}}
+\newcommand{\xt}{x_{\rm{th}}}
+
+\begin{document}
+
+<<include=FALSE, cache=FALSE>>=
+library(knitr)
+opts_chunk$set(concordance=TRUE, cache=TRUE)
+@
+
+% Makes the ACTUAL images the same width as the text
+\setkeys{Gin}{width=0.95\textwidth}
+% width = x, in the <<>>= affects the R plot (i.e. label size) but not the actual image width
+% so width = 2 or width = 10 would give same image width in document, but labels and points etc would be different
+% height = x, the acutal image height is given by the width / height ratio and the actual image width
+% so image is always blown up to fit Gin width
+
+<<include=FALSE>>=
+opts_chunk$set(width = 7)
+@
+
+
+\title{planktr: A multispecies plankton size-spectrum model in R}
+\author{Gustav Delius}
+\date{\pkg{planktr} version \Sexpr{packageDescription("planktr")[["Version"]]} , \Sexpr{Sys.Date()} }
+\maketitle
+
+\tableofcontents
+\setcounter{footnote}{1} \footnotetext{This document is included as a
+  vignette (a \LaTeX\ document created using the \R package
+  \code{knitr}) of the package \pkg{planktr}. It is automatically
+  downloaded together with the package and can be accessed through \R
+  typing \code{vignette("planktr\_vignette")}.}  \newpage
+\setlength{\parskip}{4pt} % Space between paragraphs
+
+<<echo=FALSE>>=
+rm(list=ls())
+@
+%-----------------------------------------------------------------------------------
+\section{Phytoplankton}
+\subsection{Population balance equation}
+We specialise the population balance equation \cite[eq.(2.10)]{cuesta_sheldon_2016} in the paper
+to the case of a discrete set of species, i.e.,
+\begin{equation}\label{dis}
+p(w, \ws) = \sum_{i=1}^M \delta(\ws-w_i)\,w_i^{-\xi}p_i(w/w_i).
+\end{equation}
+Substituting this into eq.(2.10), using the scaling properties of
+the rates
+\begin{align*}
+G(w,\ws)&=\ws^{1-\xi}g(w/\ws),&
+K(w,\ws)&=\ws^{-\xi}k(w/\ws),\\
+M(w,\ws)&=\ws^{-\xi}m(w/\ws),
+&Q(w,w')&=q(w/w')/w',
+\end{align*}
+and performing a change of variables to $\w =w/w_i$,
+we obtain the equation
+\[\begin{split}\label{pbe}
+w_i^\xi\partial_tp_i(\w)&=
+-\partial_\w\left[g(\w)p_i(\w)\right]
++2\int q(\w/\w')\left[k(\w')p_i(\w')\right]\w'^{-1}d\w'\\
+&\qquad-\left[k(\w)+m(\w)\right]p_i(\w)
+\end{split}\]
+for all $\w\in[\wmin,1]$, were $\wmin$ is the smallest size possible for any cell.
+
+To see that the integral is a convolution integral we write $\w=e^x$ and $\w'=e^y$ and
+observe that then $\w'^{-1}d\w'=dy$ so that the integral takes the form
+\[\begin{split}
+\int q(\w/\w')\left[k(\w')p_i(\w')\right]\w'^{-1}d\w'&=\int q(e^{x-y})k(e^y)p_i(e^y)dy\\
+&=\int_{\xmin}^0 f_1(x-y)g_1(y)dy=C_1(x).
+\end{split}\]
+The subscript $1$ is to distinguish this convolution integral from two others arising when we start
+including predation in the model.
+We need to calculate the convolution integral for all $x\in[\xmin,0]$, where
+$\xmin=\log\wmin$ is the smallest possible cell size.
+The reason we can restrict the integral to run only from $\xt$ to $0$,
+where $\xt$ is the log of the threshold size below which not division is
+taking place, is that the factor $g(y)$ is zero outside that interval anyway.
+With $y$ ranging only over the interval $[\xt,0]$, the largest region in
+which the function $f$ gets evaluated is the interval $[\xmin, -\xt]$. Thus we can replace
+$f$ by a periodic function $\bar{f}$ with period $L=-\xmin$, without changing the value
+of the integral, because $\bar{f}$ is zero on the interval from $0$ to $-xt$ and agrees with
+$f$ on the interval $[\xmin, 0]$. We can then
+also replace $g$ by a periodic function $\bar{g}$ with the same period $L$, which again
+does not change the integral because $\bar{g}$ agrees with $g$ on the interval $[\xmin, 0]$
+and is not used outside that interval. This gives us
+\[
+C_1(x)=\int_{\xmin}^0\bar{f}(x-y)\bar{g}(y)dy.
+\]
+Because this is an integral over a complete period of the two periodic functions $\bar{f}$ and
+$\bar{g}$ it can be calculated by Fast Fourier Transform.
+
+We also express the derivative in the birth term in terms of the variable $x=\log\w$ so that
+it too can be calculated with spectral  methods: $\partial_w=w^{-1}\partial_x$.
+
+\subsection{Nutrient}
+Substituting the discrete set of species expression \eqref{dis} into the expression
+\cite[(2.13)]{cuesta_sheldon_2016} for
+the rate of nutrient consumption, and choosing units for the nutrient concentration so that $\theta=1$,
+we get
+\begin{equation}
+\sigma(N,p)=a(N)\sum_{i=1}^M w_i^{2-\xi-\gamma}\int\w^\alpha p_i(\w)d\w.
+\end{equation}
+Again performing the change of variable $x=\log(\w)$ in the integral gives
+\[\int\w^\alpha p_i(\w)d\w=\int\w^{\alpha+1} p_i(\w)dx.\]
+The reason we prefer the integral in the form on the right-hand side is that in our code
+we will work with logarithmically spaced  intervals in $\w$ which translates to equally-spaced
+intervals in $x$, which then simplifies the calculation of the integral with respect to $dx$
+by the Riemann sum. For equally-spaced interpolation points and a periodic integrand the
+second-order trapezoidal rule simplifies to the Riemann sum.
+
+\section{Predation}
+We now allow cells to eat other cells. We assume that the rate at which a given cell of size $w$
+eats another givem cell of size $w'$ is given by $w^\nu S(w/w')$.
+This will add two additional terms to the right-hand side of the population
+balance equation \eqref{pbe}: one additional death term and one additional growth term.
+The death term takes the form
+\[
+-p_i(\w)\sum_{j=1}^M(w_i-w_j)^{\xi}\int S(\w'/\w_j)\w'^\nu p_j(\w')dw',
+\]
+where $\w_j=w/w_j$.
+
+
+\begin{thebibliography}{9}
+
+\bibitem{cuesta_sheldon_2016}
+Cuesta, J.A., Delius, G.W., Law, R., 2016. Sheldon Spectrum and the Plankton Paradox: Two Sides of the Same Coin. A trait-based plankton size-spectrum model. arXiv preprint arXiv:1607.04158.
+
+\end{thebibliography}
+
+
+\end{document}

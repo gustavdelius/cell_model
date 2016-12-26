@@ -15,11 +15,13 @@ Imports:
 Suggests:
     testthat,
     roxygen2,
-    knitr
+    knitr,
+    rmarkdown
 VignetteBuilder: knitr
 Collate:
     'lib.R'
     'params.R'
+    'planktonr.R'
     'sim.R'
     'steady_state.R'
 RoxygenNote: 5.0.1

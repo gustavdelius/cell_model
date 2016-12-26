@@ -3,11 +3,23 @@
 \docType{class}
 \name{PlanktonParams-class}
 \alias{PlanktonParams-class}
-\alias{setParams}
+\alias{plot,PlanktonParams-method}
+\alias{show,PlanktonParams-method}
 \title{An S4 class to represent the parameters of a plankton model}
+\usage{
+\S4method{plot}{PlanktonParams}(x, y, ...)
+
+\S4method{show}{PlanktonParams}(object)
+}
 \description{
 An S4 class to represent the parameters of a plankton model
 }
+\section{Methods (by generic)}{
+\itemize{
+\item \code{plot}: Plot the steady-state solution
+
+\item \code{show}: Show very short description of object
+}}
 \section{Slots}{
 
 \describe{
@@ -15,10 +27,11 @@ An S4 class to represent the parameters of a plankton model
 
 \item{\code{nu}}{Exponent in scaling of predation kernel. Default 0.85}
 
-\item{\code{gamma}}{Exponent in across-species steady-state power-law. 
+\item{\code{gamma}}{Exponent in across-species steady-state power-law.
 Equal to 1+nu+xi.}
 
-\item{\code{a_inf}}{Nutrient consumption rate when unlimited nutrient supply.}
+\item{\code{a_inf}}{Nutrient consumption rate when unlimited nutrient supply.
+Default 2}
 
 \item{\code{rr}}{Half saturation level at which nutrient consumption is half of the
 maximal value \code{a_inf}.}
@@ -30,8 +43,8 @@ maximal value \code{a_inf}.}
 \item{\code{w_th}}{Threshold size for duplication. Cells smaller than \code{w_th}
 can not duplicate.}
 
-\item{\code{delta_q}}{Width of offspring size distribution. Daughter cells can have 
-a weight that lies between \code{(1-delta_q)/2} and \code{(1+delta_q)/2} 
+\item{\code{delta_q}}{Width of offspring size distribution. Daughter cells can have
+a weight that lies between \code{(1-delta_q)/2} and \code{(1+delta_q)/2}
 of their parent's weight.}
 
 \item{\code{k_0}}{Overall coefficient of duplication rate function.}
@@ -54,19 +67,19 @@ of their parent's weight.}
 
 \item{\code{delta_p}}{Width of predation kernel.}
 
-\item{\code{a}}{Function \code{a(Nu)} giving nutrient intake rate coefficient as a 
+\item{\code{a}}{Function \code{a(Nu)} giving nutrient intake rate coefficient as a
 function of nutrient concentration.}
 
 \item{\code{dNu}}{Function \code{dNu(w, Nu, psi, dxs)} giving the nutrient growth
 rate for a cell of weight \code{w} as a function of nutrient concentration
-\code{Nu} and plankton population \code{psi}, where \code{dxs} is the 
+\code{Nu} and plankton population \code{psi}, where \code{dxs} is the
 spacing between species in log-size.}
 
-\item{\code{k}}{Function \code{k(w)} giving duplication rate for a cell of weight 
+\item{\code{k}}{Function \code{k(w)} giving duplication rate for a cell of weight
 \code{w}}
 
 \item{\code{g}}{Function \code{g(w, Nu)} giving the growth due to resource
-consumption for a cell of weight \code{w} as a function of resource 
+consumption for a cell of weight \code{w} as a function of resource
 concentration \code{Nu}.}
 
 \item{\code{s}}{Function \code{s(x)} giving the predation kernel as a function of

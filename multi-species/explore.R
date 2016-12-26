@@ -1,9 +1,4 @@
-library("rgl")
-source("multi-species/steady_state.R")
-source("multi-species/lib.R")
-source("multi-species/params.R")
-
-r <- setParams()
+r <- setParams(s0=0)
 plot(r)
 
 #Our input p0 is a random pertubation of the solution
@@ -16,12 +11,10 @@ Nu0 <- Nu#*(1+0.05*runif(1))
 #p0[ ,1] <- p0[(N+1):1,1]
 #plot(w, p0[ ,1])
 
-sim <- simulate(r)
-psit <- sim@p
-Nut <- sim@Nu
+sim <- doSim(r)
 
-persp3d(t, w, psit[,,1], col = "lightblue")
-plot(t, Nut, type="l", ylab="N")
+persp3d(sim@t, sim@w, sim@p[,,1], col = "lightblue", xlab="t", ylab="w")
+plot(sim@t, sim@Nu, type="l", ylab="N")
 
 pcpt <- matrix(nrow = length(t), ncol = Na)
 for (ti in 1:length(t)) {

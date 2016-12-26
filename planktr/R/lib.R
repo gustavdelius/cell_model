@@ -10,8 +10,8 @@ evolve_cell_pop <- function(r) {
     Ns <- r@Ns
 
     # Predation
-    mkernel <- fft(r@S(-r@xa)*exp(r@xa*(-r@xi)))
-    gkernel <- fft(r@epsilon*r@S(r@xa)*exp(r@xa*(r@gamma-2)))
+    mkernel <- fft(r@s(-r@xa)*exp(r@xa*(-r@xi)))
+    gkernel <- fft(r@epsilon*r@s(r@xa)*exp(r@xa*(r@gamma-2)))
 
     ks <- r@k(r@x)
     # fft of offspring size distribution
@@ -58,12 +58,11 @@ evolve_cell_pop <- function(r) {
     out <- ode(y=c(r@p0, r@Nu0), times=r@t, func=f)
 
     Nut <- out[ , ncol(out)]
+    psit <- array(dim=c(length(r@t), N, Ns))
+    psit[ , , ] <- out[ , 2:(ncol(out)-1)]
     # The following is obsolete code that was necessary when I wanted to
     # include the right boundary in the return value
-    # psit <- array(dim=c(length(t), N+1, Ns))
-    # psit[ , -(N+1), ] <- out[ , 2:(ncol(out)-1)]
     # psit[ , N+1, ] <- psit[ , 1, ]
-    psit <- out[ , 2:(N+1)]
     list(psit, Nut)
 }
 
@@ -85,10 +84,12 @@ community_spectrum <- function(p, r) {
     }
     # Pull out a factor of w^{-\gamma} so that pc is constant in steady state
     pc <- r@walgamma*pc
-    # Wrap around by moving the lowest Nal-Na entries to the top
     pcp <- pc[(r@Nal-r@Na+1L):r@Nal]
-    top <- 2L*r@Na-r@Nal+1L:r@Na  # the top Nal-Na indices
-    pcp[top] <- pcp[top] + pc[1:(r@Nal-r@Na)]
+    if (r@Nal > r@Na) {
+    # Wrap around by moving the lowest Nal-Na entries to the top
+        top <- 2L*r@Na-r@Nal+1L:r@Na  # the top Nal-Na indices
+        pcp[top] <- pcp[top] + pc[1:(r@Nal-r@Na)]
+    }
     pcp
 }
 
