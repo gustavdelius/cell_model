@@ -8,9 +8,8 @@
 
 \setlength{\parindent}{0pt}	% Eliminate the indent at the beginning of a new paragraph
 \setcounter{secnumdepth}{3}	% Elimate the section numbering starting from a specific depth (see WikiBook)
-\usepackage[round,sort]{natbib}
+%\usepackage[round,sort]{natbib}
 \usepackage[english]{babel} % No idea what this is but stops the et~al problem from natbib
-\usepackage{fixltx2e}
 \usepackage{graphicx}	% To manage external pictures
 \usepackage{float}
 \usepackage{subfig}	% To add subfigures within figures, with labels (see WikiBooks)
@@ -19,9 +18,6 @@
 \usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
 \usepackage{amssymb,amsbsy,amsmath}
 \usepackage[left=3cm,top=3cm,bottom=3.5cm,right=3cm]{geometry}	% For easy management of document margins
-\usepackage{fancyhdr} % To customize the header/footer (see WikiBooks)
-\usepackage{rotating}
-\usepackage{authblk}
 \numberwithin{equation}{section}	% Equation numbers relative to sections
 
 %% Set PDF 1.5 and compression, including object compression
@@ -39,7 +35,35 @@
   \fi
 \fi
 
-% ---------------------------------------------------------------------------------------------------------------------------------------
+% ------------------------------------------------------------------------------
+% General notation
+\newcommand{\ws}{w_*} % species mass
+\newcommand{\wth}{w_\text{th}}
+\newcommand{\wpl}{w_+}
+\newcommand{\steady}{\bar} % decoration indicating the steady-state value
+\newcommand{\splt}{Q} % splitting distribution
+\newcommand{\ssplt}{q} % splitting distribution relative to size
+
+% Notation used in size-resolved model
+\newcommand{\phy}{p}      % phytoplankton abundance
+\newcommand{\zoo}{z}      % zooplankton abundance
+\newcommand{\gp}{G_p}       % phytoplankton growth rate
+\newcommand{\gz}{G_z}       % zooplankton growth rate
+\newcommand{\pred}{S}     % predation kernel
+\newcommand{\spred}{s}     % predation kernel scaled
+\newcommand{\death}{M}  % death rate
+\newcommand{\sdeath}{m} % death scaling function
+\newcommand{\dup}{K} % death scaling function
+\newcommand{\sdup}{k} % death scaling function
+\newcommand{\F}{\phi}     % steady state size distribution (exponential)
+\newcommand{\N}{N}        % resource level
+\newcommand{\halfN}{r}    % half-resource level
+\newcommand{\yield}{\theta}   % yield constant
+\newcommand{\E}{E}   % integrating factor
+\newcommand{\sE}{e}   % scaled integrating factor scaled
+\newcommand{\Hl}{H}   % large cells contribution
+\newcommand{\sHl}{h}   % scaled large cells contribution
+
 
 \newcommand{\code}[1]{{\texttt{#1}}}
 \newcommand{\pkg}[1]{{\texttt{#1}}}
@@ -47,11 +71,14 @@
 \newcommand{\R}{{\normalfont\textsf{R }}{}}
 \newcommand{\args}[1]{{\texttt{#1}}}
 
-\newcommand{\ws}{w_*}
-\newcommand{\w}{\omega}
-\newcommand{\wmin}{\w_{\rm{min}}}
 \newcommand{\xmin}{x_{\rm{min}}}
-\newcommand{\xt}{x_{\rm{th}}}
+\newcommand{\xmax}{x_{\rm{max}}}
+\newcommand{\w}{\omega}
+\newcommand{\x}{\tilde{x}}
+\newcommand{\y}{\tilde{y}}
+\newcommand{\wwmin}{\w_{\rm{min}}}
+\newcommand{\xxmin}{\x_{\rm{min}}}
+\newcommand{\xt}{\x_{\rm{th}}}
 
 \begin{document}
 
@@ -88,89 +115,235 @@ opts_chunk$set(width = 7)
 <<echo=FALSE>>=
 rm(list=ls())
 @
-%-----------------------------------------------------------------------------------
-\section{Phytoplankton}
-\subsection{Population balance equation}
-We specialise the population balance equation \cite[eq.(2.10)]{cuesta_sheldon_2016} in the paper
-to the case of a discrete set of species, i.e.,
-\begin{equation}\label{dis}
-p(w, \ws) = \sum_{i=1}^M \delta(\ws-w_i)\,w_i^{-\xi}p_i(w/w_i).
+
+%-------------------------------------------------------------------------------
+\section{Introduction}
+The plaktonr package provides code to simulate a multi-species size-resolved
+community of unicellular plankton, using the model described in the paper
+\cite{cuesta_sheldon_2016}. The model differs from other models in that it
+describes the growth during the lifetime of individual cells. So it resolves
+two size variables: the characteristic sizes of the species and the sizes of
+the individuals.
+
+The main purpose is to investigate how the growth of individual cells
+affects the stability of the multi-species community. In the usual models
+of coexistence, where one models only the total abundance of the different
+species but not the distribution of sizes within species, there is the
+effect of "limited similarity" which prevents similar species to coexist.
+Even when such a model has a coexistence steady state, this steady state
+is structurally unstable against small perturbations in the parameters.
+Giving one species even just a tiny competitive advantage over the others 
+leads to a collapse, as expected from the competitive exclusion principle.
+The question we want to investigate with this package is whether this
+phenomenon can be avoided when the growth of cells is included in the model.
+
+Modelling both species and individual sizes is computationally very costly.
+We solve this problem in this package by making use of spectral methods.
+This allows us to calculate the convolution integrals that describe the
+predation and the reproduction in the model in an efficient way that
+scales as $n\log n$ rather than $n^2$ with the number $n$ of size steps.
+We also make use of the scaling properties of the rates to handle and
+store the populations in an economical way.
+
+The model is already described in the paper \cite{cuesta_sheldon_2016}.
+This vignette can therefore concentrate on two tasks: 
+to explain how we implemented the model numerically and
+to illustrate the use of the code.
+
+
+%-------------------------------------------------------------------------------
+\section{Population balance equation}
+In our model we describe the abundance density $\phy(w,\ws)$ of cells
+of size $w$ and species $w*$, where a species is specified by the 
+maximum size $w*$ for cells of that species. 
+The basis of the model is the population balance equation 
+\cite[eq.(2.10)]{cuesta_sheldon_2016} that describes the effect that growth,
+division and death of cells have on the abundance density:
+\begin{equation}
+\begin{split}
+\frac{\partial}{\partial t}\phy(w,\ws,t) =&\,
+-\frac{\partial}{\partial w}\big[\gp(w,\ws)\phy(w,\ws,t)\big] \\
+&+2\int_0^{\ws}\splt(w|w')\dup(w',\ws)\phy(w',\ws,t)\,dw' \\
+&-\dup(w,\ws)\phy(w,\ws,t)-\death(w,\ws)\phy(w,\ws,t).
+\end{split}
+\label{eq:MFdiv}
 \end{equation}
-Substituting this into eq.(2.10), using the scaling properties of
-the rates
+The first term on the right-hand side describes the dynamics of a growing organism as an extension of the McKendrick--von Foerster equation \cite{silvert:1978,silvert:1980} when $\gp(w,\ws)$ is the growth rate of a cell of size $\w$ and species $\ws$.
+The second term is the rate at which cells of size $w$ are produced from the
+division of cells of size $0<w'<\ws$. 
+It is composed from the rate $\dup(w',\ws)$ at which a cell of size $w'$ and species $\ws$ divides and the probability density $\splt(w|w')$ that the daughter cell has size $w$ given that its parent had size $w'$ when it divided.
+The factor $2$ taking care of the fact that each parent cell yields two daughter cells.
+The third term is the rate at which cells of size $w$ divide. The last term is the rate at which cells of size $w$ die for whatever reason. 
+The same equation describes this process for any species, hence $\ws$ enters as a parameter in every rate function involved.
+
+In the case of a discrete set of $M$ species with characteristic sizes
+$w_i, i=1,\dots,M$ we can write
+\begin{equation}\label{dis}
+p(w, \ws) = \sum_{i=1}^M \delta(\ws-w_i)\,w_i^{-\gamma}p_i(w/w_i).
+\end{equation}
+Note how we express the abundance of cells in species $i$ as a function
+of the relative weight $w/w_i$ with respect to that species' maximum
+weight. This has the advantage that for
+all species this abundance has support in the same interval 
+$w/w_i\in[\wmin,1]$, were $\wmin$ is the smallest relative size possible 
+for any cell.
+
+The reason for taking out the factor $w_i^{-\gamma}$ in \eqref{dis} is that it turns out that in the steady state this has the effect that all species are
+described by the same function $p_i$, a phenomenon that is due to the
+scale-invariance of the model, see \cite{cuesta_sheldon_2016} for details.
+The same scale-invariance property also implies that
 \begin{align*}
 G(w,\ws)&=\ws^{1-\xi}g(w/\ws),&
 K(w,\ws)&=\ws^{-\xi}k(w/\ws),\\
 M(w,\ws)&=\ws^{-\xi}m(w/\ws),
-&Q(w,w')&=q(w/w')/w',
+&Q(w,w')&=q(w/w')/w'.
 \end{align*}
-and performing a change of variables to $\w =w/w_i$,
-we obtain the equation
+If we substitute these expressions into the population balance equation \eqref{eq:MFdiv} and performing a change of variables to $\w =w/w_i$,
+we obtain the equations
 \[\begin{split}\label{pbe}
 w_i^\xi\partial_tp_i(\w)&=
 -\partial_\w\left[g(\w)p_i(\w)\right]
 +2\int q(\w/\w')\left[k(\w')p_i(\w')\right]\w'^{-1}d\w'\\
 &\qquad-\left[k(\w)+m(\w)\right]p_i(\w)
 \end{split}\]
-for all $\w\in[\wmin,1]$, were $\wmin$ is the smallest size possible for any cell.
+for all $i=1,\dots M$ and $\w\in[\wmin,1]$.
 
-To see that the integral is a convolution integral we write $\w=e^x$ and $\w'=e^y$ and
+To numerically calculate the integral in \eqref{pbe} we make use of the fact that it is a convolution integral. 
+To see this we write $\w=e^\x$ and $\w'=e^\y$ and
 observe that then $\w'^{-1}d\w'=dy$ so that the integral takes the form
 \[\begin{split}
-\int q(\w/\w')\left[k(\w')p_i(\w')\right]\w'^{-1}d\w'&=\int q(e^{x-y})k(e^y)p_i(e^y)dy\\
-&=\int_{\xmin}^0 f_1(x-y)g_1(y)dy=C_1(x).
+\int q(\w/\w')\left[k(\w')p_i(\w')\right]\w'^{-1}d\w'&=\int q(e^{\x-\y})k(e^\y)p_i(e^\y)d\y\\
+&=\int_{\xt}^0 f_1(\x-\y)g_1(\y)d\y=C_1(\x).
 \end{split}\]
-The subscript $1$ is to distinguish this convolution integral from two others arising when we start
-including predation in the model.
-We need to calculate the convolution integral for all $x\in[\xmin,0]$, where
-$\xmin=\log\wmin$ is the smallest possible cell size.
+The subscript $1$ is to distinguish this convolution integral from two others that will arise when we start including predation in the model.
+We need to calculate the convolution integral for all $\x\in[\xmin,0]$, where
+$\xmin=\log\wmin$ is the smallest possible log cell size.
 The reason we can restrict the integral to run only from $\xt$ to $0$,
 where $\xt$ is the log of the threshold size below which not division is
-taking place, is that the factor $g(y)$ is zero outside that interval anyway.
-With $y$ ranging only over the interval $[\xt,0]$, the largest region in
-which the function $f$ gets evaluated is the interval $[\xmin, -\xt]$. Thus we can replace
-$f$ by a periodic function $\bar{f}$ with period $L=-\xmin$, without changing the value
-of the integral, because $\bar{f}$ is zero on the interval from $0$ to $-xt$ and agrees with
-$f$ on the interval $[\xmin, 0]$. We can then
-also replace $g$ by a periodic function $\bar{g}$ with the same period $L$, which again
-does not change the integral because $\bar{g}$ agrees with $g$ on the interval $[\xmin, 0]$
-and is not used outside that interval. This gives us
+taking place, is that the factor $g_1(\y)$ is zero outside that interval anyway.
+With $\y$ ranging only over the interval $[\xt,0]$, the largest region in
+which the function $f_1$ gets evaluated is the interval $[\xmin, -\xt]$. 
+Thus we can replace $f_1$ by a periodic function $\bar{f_1}$ with period $L=-\xmin$, without changing the value
+of the integral, because $\bar{f_1}$ is zero on the interval from $0$ to $-\xt$ and agrees with $f_1$ on the interval $[\xmin, 0]$. 
+We can then also replace $g$ by a periodic function $\bar{g}$ with the same period $L$, which again does not change the integral because $\bar{g}$ agrees with $g$ on the interval $[\xmin, 0]$ and is not used outside that interval. 
+This gives us
 \[
-C_1(x)=\int_{\xmin}^0\bar{f}(x-y)\bar{g}(y)dy.
+C_1(\x)=\int_{\xmin}^0\bar{f}(\x-\y)\bar{g}(\y)d\y.
 \]
 Because this is an integral over a complete period of the two periodic functions $\bar{f}$ and
 $\bar{g}$ it can be calculated by Fast Fourier Transform.
 
-We also express the derivative in the birth term in terms of the variable $x=\log\w$ so that
-it too can be calculated with spectral  methods: $\partial_w=w^{-1}\partial_x$.
+We also express the derivative in the birth term in terms of the variable $\x=\log\w$ so that
+it too can be calculated with spectral  methods: $\partial_\w=\w^{-1}\partial_\x$.
 
-\subsection{Nutrient}
+
+%-------------------------------------------------------------------------------
+\section{Nutrient equation}
+We assume that all cells consume a common nutrient whose concentration we denote by $\N$. 
+In the absence of growth through predation on other cells, we assume a
+von Bertalannfy growth model
+\begin{equation}
+g(\w)= a(\N)\w^\alpha-b \w^\beta,
+\end{equation}
+where the positive first term comes form nutrient intake and the negative second term is the metabolic loss rate. 
+For the dependence on the nutrient concentration we use
+\begin{equation}
+a(\N) = a_\infty\frac{\N}{\N+\N_0}.
+\end{equation}
+
+The nutrient concentration is described by the equation
+\begin{equation}
+\frac{d}{dt}\N = \rho(\N)-\sigma(\N,p)
+\end{equation}
+where $\sigma(N,p)$ is the rate at which nutrients are consumed by the cells and $\rho(N)$ is the rate at which the resource is replenished.
 Substituting the discrete set of species expression \eqref{dis} into the expression
 \cite[(2.13)]{cuesta_sheldon_2016} for
-the rate of nutrient consumption, and choosing units for the nutrient concentration so that $\theta=1$,
-we get
+the rate of nutrient consumption, and choosing units for the nutrient concentration so that one unit of nutrient produces one unit of cell biomass, we get
 \begin{equation}
 \sigma(N,p)=a(N)\sum_{i=1}^M w_i^{2-\xi-\gamma}\int\w^\alpha p_i(\w)d\w.
 \end{equation}
-Again performing the change of variable $x=\log(\w)$ in the integral gives
-\[\int\w^\alpha p_i(\w)d\w=\int\w^{\alpha+1} p_i(\w)dx.\]
+Again performing the change of variable $\x=\log(\w)$ in the integral gives
+\begin{equation}
+\int\w^\alpha p_i(\w)d\w=\int\w^{\alpha+1} p_i(\w)d\x.
+\end{equation}
 The reason we prefer the integral in the form on the right-hand side is that in our code
 we will work with logarithmically spaced  intervals in $\w$ which translates to equally-spaced
-intervals in $x$, which then simplifies the calculation of the integral with respect to $dx$
+intervals in $\x$, which then simplifies the calculation of the integral with respect to $d\x$
 by the Riemann sum. For equally-spaced interpolation points and a periodic integrand the
 second-order trapezoidal rule simplifies to the Riemann sum.
 
+
+%-------------------------------------------------------------------------------
 \section{Predation}
 We now allow cells to eat other cells. We assume that the rate at which a given cell of size $w$
-eats another givem cell of size $w'$ is given by $w^\nu S(w/w')$.
-This will add two additional terms to the right-hand side of the population
-balance equation \eqref{pbe}: one additional death term and one additional growth term.
-The death term takes the form
-\[
--p_i(\w)\sum_{j=1}^M(w_i-w_j)^{\xi}\int S(\w'/\w_j)\w'^\nu p_j(\w')dw',
-\]
-where $\w_j=w/w_j$.
+eats another givem cell of size $w'$ is given by $S(w,w') = w^\nu s(w/w')$.
+Both the death term and the growth term will receive an additional contribution from predation.
 
+\subsection{Death from predation}
+The contribution to the death rate $M(w,\ws)$ from predation is 
+\begin{equation}\label{Mp}
+M_P(w,\ws)=\int w'^\nu s(w'/w)p_c(w')dw'
+\end{equation}
+where $p_c(w)$ is the total community abundance density of cells of size $w$, summed over all species:
+\begin{equation}\label{pc}
+p_c(w)=\int p(w,\ws)d\ws=\sum_{i=1}^M w_i^{-\gamma}p_i(w/w_i)
+=w^{-\gamma}\sum_{i=1}^M (w/w_i)^\gamma p_i(w/w_i)
+=w^{-\gamma}\tilde{p}_c(w).
+\end{equation}
+Again the reason for pulling out the factor of $w^{-\gamma}$ is that
+the resulting $\tilde{p}_c(w)$ is constant in the steady-state.
+Substituting this into \eqref{Mp} gives
+\begin{equation}\label{Mp}
+M_P(w,\ws)=w^{-\xi}\int s(w'/w)(w'/w)^{-\xi} \tilde{p}_c(w')w'^{-1}dw'
+=w^{-\xi}C_2(\log w).
+\end{equation}
+Here $C_2(x)$ is a convolution integral:
+\begin{equation}
+C_2(x)=\int g_2(x-y)f_2(y)dy = \int g_2(y)f_2(x-y)dy
+\end{equation}
+with
+\begin{equation}
+g_2(x)=s\left(e^{-x}\right)e^{-\xi x}\ \text{ and }\ 
+f_2(x)=\tilde{p}_c\left(e^{x}\right).
+\end{equation}
+We need to evaluate this convolution for all values of $x$ in the interval $[\xmin,\xmax]$ where $\xmin$ and $\xmax$ are the log
+of the smallest and the largest cell size among all species. 
+We assume that the predation kernel $s(x)$ has 
+support only in a finite interval $[-\beta_P-\Delta_P/2, -\beta_P+\Delta_P/2]$
+with the size $\Delta_P$ of that interval and the
+typical predator/prey mass ration $\beta_P$ so that 
+$[-\beta_P-\Delta_P/2, -\beta_P+\Delta_P/2]\subset[\xmin,\xmax]$.
+
+For simplicity we will from now on choose mass units so that $\xmax=0$.
+
+We will now put periodic boundary conditions on the community spectrum, i.e.,
+we artificially assume that the sizes of cells lie on a circle with the
+size of the smallest cell identified with the size of the largest cell.
+The hope is that these artificial boundary
+conditions for the very small and very large species will not have a
+dramatic effect on the species of intermediate size.
+
+These periodic boundary conditions allow us to evaluate the convolution
+integral $C_2$ with Fouier methods.
+
+\subsection{Growth from predation}
+The contribution to the growth rate from predation is
+\begin{equation}\label{Mp}
+G_P(w,\ws)=\int w^\nu s(w/w')\epsilon w'p_c(w')dw',
+\end{equation}
+where $\epsilon$ is the proportion of the prey mass $w'$ that is converted
+to predator mass. Using the expression \eqref{pc} for the community abundance
+this becomes
+\begin{equation}\label{Mp}
+G_P(w,\ws)=\epsilon w^{1-\xi}\int s(w/w')(w/w')^{\gamma-2} p_c(w')w'^{-1}dw'
+=\epsilon w^{1-\xi}C_3(\log(w)).
+\end{equation}
+Here $C_3(x)$ is the convolution integral with
+\begin{equation}
+g_3(x)=s\left(e^{x}\right)e^{(\gamma-2) x}\ \text{ and }\ 
+f_3(x)=\tilde{p}_c\left(e^{x}\right).
+\end{equation}
+Now the support of $g_3$ is $[\beta_P-\Delta_P/2\beta_P+\Delta_P/2]$
 
 \begin{thebibliography}{9}
 
