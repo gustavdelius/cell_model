@@ -74,22 +74,22 @@ evolve_cell_pop <- function(r) {
 #' Used in \code{\link{evolve_cel_pop}}
 #'
 #' @param p matrix of population densities (N x Ns)
-#' @param r PlanktonParams object
+#' @param sim PlanktonSim object
 #' @return A vector of community population densities at points \code{xa}
-community_spectrum <- function(p, r) {
-    pc <- vector("numeric", length=r@Nal)
-    idx <- 1:r@N
-    for (i in 1:r@Ns) {
-        pc[idx] <- pc[idx] + r@wsmgamma[i]*p[,i]
-        idx <- idx + r@ds
+community_spectrum <- function(p, sim) {
+    pc <- vector("numeric", length=sim@Nal)
+    idx <- 1:sim@N
+    for (i in 1:sim@Ns) {
+        pc[idx] <- pc[idx] + sim@wsmgamma[i]*p[,i]
+        idx <- idx + sim@ds
     }
     # Pull out a factor of w^{-\gamma} so that pc is constant in steady state
-    pc <- r@walgamma*pc
-    pcp <- pc[(r@Nal-r@Na+1L):r@Nal]
-    if (r@Nal > r@Na) {
+    pc <- sim@walgamma*pc
+    pcp <- pc[(sim@Nal-sim@Na+1L):sim@Nal]
+    if (sim@Nal > sim@Na) {
     # Wrap around by moving the lowest Nal-Na entries to the top
-        top <- (2L*r@Na-r@Nal+1L):r@Na  # the top Nal-Na indices
-        pcp[top] <- pcp[top] + pc[1:(r@Nal-r@Na)]
+        top <- (2L*sim@Na-sim@Nal+1L):sim@Na  # the top Nal-Na indices
+        pcp[top] <- pcp[top] + pc[1:(sim@Nal-sim@Na)]
     }
     pcp
 }

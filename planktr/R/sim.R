@@ -87,7 +87,7 @@ doSim <- function(r, ...) {
     xmin <- log(wmin)
     # equal step sizes in log size
     r@dx <- -xmin/r@N
-    r@x <- seq(log(wmin), -r@dx, by=r@dx)
+    r@x <- seq(xmin, -r@dx, by=r@dx)
     r@w <- exp(r@x)  # vector of weights
     r@L <- -xmin
 
@@ -113,6 +113,12 @@ doSim <- function(r, ...) {
     # Create vectors containing powers
     r@wsmgamma <- exp(r@xs*(-r@gamma))
     r@walgamma <- exp(r@xal*(r@gamma))
+
+    # Check that the feeding kernel has support within the community
+    if ((r@s0) > 0 &&
+        (-r@beta_p-r@delta_p) < (r@xs[1]+r@x[1])) {
+        stop("The community spectrum is too short for the given feeding kernel.")
+    }
 
     # Times
     if (length(r@t) == 0) {
@@ -184,12 +190,9 @@ setValidity("PlanktonSim", function(object) {
     if (object@SpeciesSpacing < 1) {
         err <- c(err, "SpeciesSpacing can not be less than 1")
     }
-    if (r@N %% r@SpeciesSpacing) {
+    if (object@N %% object@SpeciesSpacing) {
         err <- c(err,
                  "The number N of steps must be a multiple of the SpeciesSpacing")
-    }
-    if (r@s0 > 0 && -r@beta_p-r@delta_p < r@xs[1]+r@x[1]) {
-        err <- c(err, "The community spectrum is too short for the given feeding kernel.")
     }
 
     if (length(err) == 0) TRUE else err
