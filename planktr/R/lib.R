@@ -8,14 +8,15 @@
 evolve_cell_pop <- function(r) {
     N <- r@N
     Ns <- r@Ns
+    Na <- r@Na
 
     # Predation
-    mkernel <- fft(r@s(-r@xa)*exp(r@xa*(-r@xi)))
-    gkernel <- fft(r@epsilon*r@s(r@xa)*exp(r@xa*(r@gamma-2)))
+    mkernel <- r@dx/Na*fft(r@s(-r@xa)*exp(r@xa*(-r@xi)))
+    gkernel <- r@dx/Na*fft(r@epsilon*r@s(r@xa-r@xa[1])*exp(r@xa*(r@gamma-2)))
 
-    ks <- r@k(r@x)
+    ks <- r@k(r@w)
     # fft of offspring size distribution
-    FqR <- fft(r@q(r@x))
+    FqR <- 2*r@dx/N*fft(r@q(r@w))
     # For calculating first derivative by Fourier transform
     k1 <- (2*pi/r@L)*1i*c(0:(N/2-1),0,(-N/2+1):-1)
 
@@ -27,14 +28,14 @@ evolve_cell_pop <- function(r) {
     f <- function(t, pN, parms) {
         p <- matrix(pN[-length(pN)], ncol=r@Ns)
         Nu <- pN[length(pN)]
-        pcp <- community_spectrum(p, r)
+        pcp <- fft(community_spectrum(p, r))
 
         # Calculate growth rate
-        gp <- Re(fft(gkernel*pcp, inverse = TRUE))/r@Na  # from predation
+        gp <- Re(fft(gkernel*pcp, inverse = TRUE))  # from predation
         gr <- r@g(r@w, Nu) # from resource
 
         # Calculate death rate
-        mp <- Re(fft(mkernel*pcp, inverse = TRUE))/r@Na # from predation
+        mp <- Re(fft(mkernel*pcp, inverse = TRUE)) # from predation
 
         # Calculate right-hand side of population balance equation
         f <- matrix(0, nrow = N, ncol = Ns)
@@ -45,9 +46,9 @@ evolve_cell_pop <- function(r) {
             f[,i] <- wsmxi[i] * (
                 -(ks+ms)*p[,i] +  # linear part
                 # birth part
-                2*r@L/N*Re(fft(FqR*(fft(ks*p[,i])), inverse = TRUE)/N) +
+                Re(fft(FqR*(fft(ks*p[,i])), inverse = TRUE)) +
                 # growth part
-                -Re(fft(fft(gs*p[,i])*k1, inverse=TRUE)/N)/r@w
+                -Re(fft(fft(gs*p[,i])*k1, inverse=TRUE))/r@w
             )
         }
         nutrientGrowth <- r@dNu(r@w, Nu, p, r@dxs)

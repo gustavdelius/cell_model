@@ -71,7 +71,7 @@ simulate <- setClass("PlanktonSim",
         N = 32L,
         Ns = 2L,
         SpeciesSpacing = 1L,
-        tmax = 10,
+        tmax = 1,
         Nt = 100L
     )
 )
@@ -116,8 +116,16 @@ doSim <- function(r, ...) {
 
     # Times
     if (length(r@t) == 0) {
-        r@t <- seq(0, r@tmax, by=r@tmax/r@Nt)
+        if (r@tmax > 0 && r@Nt > 0) {
+            r@t <- seq(0, r@tmax, by=r@tmax/r@Nt)
+        } else {
+            stop("tmax and Nt must both be positive")
+        }
     } else {
+        if (r@t[1] != 0) {
+            warning("The vector t did not start at 0. I added a zero to it.")
+            r@t <- c(0, r@t)
+        }
         r@Nt <- length(r@t)
         r@tmax <- r@t[r@Nt]
     }
@@ -180,6 +188,9 @@ setValidity("PlanktonSim", function(object) {
         err <- c(err,
                  "The number N of steps must be a multiple of the SpeciesSpacing")
     }
+    if (r@s0 > 0 && -r@beta_p-r@delta_p < r@xs[1]+r@x[1]) {
+        err <- c(err, "The community spectrum is too short for the given feeding kernel.")
+    }
 
-    if (length(err) == 0) TRUE else errors
+    if (length(err) == 0) TRUE else err
 })

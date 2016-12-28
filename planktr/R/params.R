@@ -207,13 +207,17 @@ setParams <- function(...) {
 }
 
 setValidity("PlanktonParams", function(object) {
-    errors <- character()
-    if (length(object@xi) != 1) {
+    err <- character()
+    r <- object
+    if (length(r@xi) != 1) {
         msg <- paste("Length of xi should be 1")
-        errors <- c(errors, msg)
+        err <- c(errors, msg)
+    }
+    if (r@beta_p-r@delta_p/2 < 0) {
+        err <- c(err, "The feeding kernel is too wide.")
     }
 
-    if (length(errors) == 0) TRUE else errors
+    if (length(err) == 0) TRUE else err
 })
 
 #' @describeIn PlanktonParams Plot the steady-state solution

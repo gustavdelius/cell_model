@@ -1,3 +1,5 @@
+library("deSolve")
+library("rgl")
 r <- setParams(s0=0)
 plot(r)
 
@@ -13,7 +15,10 @@ Nu0 <- Nu#*(1+0.05*runif(1))
 
 sim <- doSim(r)
 
+plot(sim@w, sim@p[1, , 1], type="l", xlab="w", ylab="p_1(t=0)")
+plot(sim@w, sim@p[5, , 1], type="l", xlab="w", ylab="p_1(t=dt)")
 persp3d(sim@t, sim@w, sim@p[,,1], col = "lightblue", xlab="t", ylab="w")
+
 plot(sim@t, sim@Nu, type="l", ylab="N")
 
 pcpt <- matrix(nrow = length(t), ncol = Na)
