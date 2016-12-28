@@ -27,10 +27,9 @@
 #' @slot delta_p Width of predation kernel.
 #' @slot a Function \code{a(Nu)} giving nutrient intake rate coefficient as a
 #' function of nutrient concentration.
-#' @slot dNu Function \code{dNu(w, Nu, psi, dxs)} giving the nutrient growth
+#' @slot dNu Function \code{dNu(w, Nu, psi, r)} giving the nutrient growth
 #' rate for a cell of weight \code{w} as a function of nutrient concentration
-#' \code{Nu} and plankton population \code{psi}, where \code{dxs} is the
-#' spacing between species in log-size.
+#' \code{Nu} and plankton population \code{psi}.
 #' @slot k Function \code{k(w)} giving duplication rate for a cell of weight
 #' \code{w}
 #' @slot g Function \code{g(w, Nu)} giving the growth due to resource
@@ -146,13 +145,13 @@ setParams <- function(...) {
     }
     # Nutrient growth rate
     # See eq.(2.12) and (2.13)
-    r@dNu <- function(w, Nu, psi, dxs) {
+    r@dNu <- function(w, Nu, psi, r) {
         # Args:
         #   Nu: Nutrient concentration
         #   psi: N x Ns matrix with each column the scaled population of one
         #        species
-        integral <- colSums(w^(r@alpha+1)*psi)*dxs
-        r@rho_0*(1-Nu/r@Nu_0) - (r@a(Nu)*sum(w^(2-r@xi-r@gamma)*integral))
+        integral <- colSums(w^(r@alpha+1)*psi)*r@dx
+        r@rho_0*(1-Nu/r@Nu_0) - (r@a(Nu)*sum(r@ws^(2-r@xi-r@gamma)*integral))
     }
 
     # Duplication rate

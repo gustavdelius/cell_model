@@ -69,8 +69,8 @@ simulate <- setClass("PlanktonSim",
     contains = "PlanktonParams",
     prototype = list(
         N = 32L,
-        Ns = 2L,
-        SpeciesSpacing = 1L,
+        Ns = 32L,
+        SpeciesSpacing = 8L,
         tmax = 1,
         Nt = 100L
     )

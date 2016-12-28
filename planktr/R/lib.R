@@ -48,10 +48,10 @@ evolve_cell_pop <- function(r) {
                 # birth part
                 Re(fft(FqR*(fft(ks*p[,i])), inverse = TRUE)) +
                 # growth part
-                -Re(fft(fft(gs*p[,i])*k1, inverse=TRUE))/r@w
+                -Re(fft(fft(gs*p[,i])*k1, inverse=TRUE)/N)/r@w
             )
         }
-        nutrientGrowth <- r@dNu(r@w, Nu, p, r@dxs)
+        nutrientGrowth <- r@dNu(r@w, Nu, p, r)
 
         list(c(f, nutrientGrowth))
     }
@@ -88,7 +88,7 @@ community_spectrum <- function(p, r) {
     pcp <- pc[(r@Nal-r@Na+1L):r@Nal]
     if (r@Nal > r@Na) {
     # Wrap around by moving the lowest Nal-Na entries to the top
-        top <- 2L*r@Na-r@Nal+1L:r@Na  # the top Nal-Na indices
+        top <- (2L*r@Na-r@Nal+1L):r@Na  # the top Nal-Na indices
         pcp[top] <- pcp[top] + pc[1:(r@Nal-r@Na)]
     }
     pcp
