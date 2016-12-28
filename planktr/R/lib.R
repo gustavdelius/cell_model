@@ -28,7 +28,7 @@ evolve_cell_pop <- function(r) {
     f <- function(t, pN, parms) {
         p <- matrix(pN[-length(pN)], ncol=r@Ns)
         Nu <- pN[length(pN)]
-        pcp <- fft(community_spectrum(p, r))
+        pcp <- fft(community(p, r))
 
         # Calculate growth rate
         gp <- Re(fft(gkernel*pcp, inverse = TRUE))  # from predation
@@ -76,7 +76,7 @@ evolve_cell_pop <- function(r) {
 #' @param p matrix of population densities (N x Ns)
 #' @param sim PlanktonSim object
 #' @return A vector of community population densities at points \code{xa}
-community_spectrum <- function(p, sim) {
+community <- function(p, sim) {
     pc <- vector("numeric", length=sim@Nal)
     idx <- 1:sim@N
     for (i in 1:sim@Ns) {
@@ -92,6 +92,17 @@ community_spectrum <- function(p, sim) {
         pcp[top] <- pcp[top] + pc[1:(sim@Nal-sim@Na)]
     }
     pcp
+}
+
+get_community <- function(sim) {
+    aaply(sim@p, 1, "community", sim=sim)
+}
+
+plot_community <- function(sim) {
+    com <- aaply(sim@p, 1, "community", sim=sim)
+    open3d()
+    persp3d(sim@t, sim@xa, com, col = "lightblue",
+            xlab="t", ylab="xa", zlab="p_c")
 }
 
 #' Perform a Fourier interpolation
