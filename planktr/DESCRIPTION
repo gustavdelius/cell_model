@@ -25,5 +25,6 @@ Collate:
     'lib.R'
     'planktonr.R'
     'sim.R'
+    'plot3d.R'
     'steady_state.R'
 RoxygenNote: 5.0.1
