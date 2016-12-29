@@ -20,8 +20,9 @@ Suggests:
     rmarkdown
 VignetteBuilder: knitr
 Collate:
-    'lib.R'
     'params.R'
+    'grid.R'
+    'lib.R'
     'planktonr.R'
     'sim.R'
     'steady_state.R'

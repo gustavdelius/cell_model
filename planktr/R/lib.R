@@ -1,11 +1,17 @@
 #' Evolve cell population density using the population balance equation
 #'
 #' see eq.(2.10)
-#' @param r PlanktonSim object
+#' @param p0 N x Ns matrix or vector with initial population for all Ns species
+#' or a vector of length N with initial population for one species that is then
+#' replicated over all species. If missing, the steady-state solution is used
+#' and replicated over all species.
+#' @param Nu0 Initial resource concentration. If missing, the steady-state value
+#' is used
+#' @param r Sim object
 #' @return list of two elements:
 #'     Nt x N x Ns  array of population densities
 #'     vector of length Nt containing the nutrient densities
-evolve_cell_pop <- function(r) {
+evolve_cell_pop <- function(p0, Nu0, r) {
     N <- r@N
     Ns <- r@Ns
     Na <- r@Na
@@ -56,7 +62,7 @@ evolve_cell_pop <- function(r) {
         list(c(f, nutrientGrowth))
     }
 
-    out <- ode(y=c(r@p0, r@Nu0), times=r@t, func=f)
+    out <- ode(y=c(p0, Nu0), times=r@t, func=f)
 
     Nut <- out[ , ncol(out)]
     psit <- array(dim=c(length(r@t), N, Ns))
@@ -76,7 +82,7 @@ evolve_cell_pop <- function(r) {
 #' is constant in the steady-state.
 #'
 #' @param p matrix of population densities (N x Ns)
-#' @param sim PlanktonSim object
+#' @param sim Sim object
 #' @return A vector of community population densities at points \code{xa}
 community <- function(p, sim) {
     pc <- vector("numeric", length=sim@Nal)
@@ -101,7 +107,7 @@ community <- function(p, sim) {
 #'
 #' This produces $\tilde{p_c}(t, w)}$ as defined in the vignette.
 #' In the steady state this should be constant in w.
-#' @param sim PlanktonSim object
+#' @param sim Sim object
 #' @return matrix Nt x Na
 get_community <- function(sim) {
     aaply(sim@p, 1, "community", sim=sim)
@@ -110,7 +116,7 @@ get_community <- function(sim) {
 #' Plot community spectrum against time and size
 #'
 #' This plots $\tilde{p_c}(t, w)}$ as defined in the vignette.
-#' @param sim PlanktonSim object
+#' @param sim Sim object
 plot3d_community <- function(sim) {
     com <- get_community(sim)
     persp3d(sim@t, sim@xa, com, col = "lightblue",
@@ -121,7 +127,7 @@ plot3d_community <- function(sim) {
 #' Plot community spectrum against size at one time
 #'
 #' This plots $\tilde{p_c}(t, w)}$ as defined in the vignette.
-#' @param sim PlanktonSim object
+#' @param sim Sim object
 #' @param t Time at which to plot. If the value is not available
 #' at that time, the last earlier time is used. Default: latest available time.
 plot_community <- function(sim, t=NULL) {
@@ -139,7 +145,7 @@ plot_community <- function(sim, t=NULL) {
 #' Plot community spectrum against size at one time
 #'
 #' This plots $\tilde{p_c}(t, w)}$ as defined in the vignette.
-#' @param sim PlanktonSim object
+#' @param sim Sim object
 #' @param t Time at which to plot. If the value is not available
 #' at that time, the last earlier time is used. Default: latest available time.
 plot_community <- function(sim, t=NULL) {
@@ -147,9 +153,10 @@ plot_community <- function(sim, t=NULL) {
         ti <- sim@Nt+1
     } else if (t >= 0) {
         ti <- which(sim@t >= t)[1] - 1
+    } else {
+        stop("The time can not be negative")
     }
     com <- community(sim@p[ti, , ], sim=sim)
-    open3d()
     plot(sim@xa, com, type="l", xlab="xa", ylab="p_c",
          main=paste("Community spectrum at t=", sim@t[ti]))
 }

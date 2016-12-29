@@ -43,7 +43,7 @@
 #' @slot wBar Weights at which the steady-state population is given.
 #' @slot psiBar Population density at steady state.
 #' @slot NuBar Nutrient concentration at steady state.
-setParams <- setClass("PlanktonParams",
+setClass("Params",
     slots = c(
         # Exponents
         xi    = "numeric",
@@ -132,8 +132,8 @@ setParams <- setClass("PlanktonParams",
 )
 
 # Initialise object ----
-setParams <- function(...) {
-    r <- new("PlanktonParams", ...)
+Params <- function(...) {
+    r <- new("Params", ...)
 
     r@gamma <- 1 + r@nu + r@xi
 
@@ -205,7 +205,7 @@ setParams <- function(...) {
     return(r)
 }
 
-setValidity("PlanktonParams", function(object) {
+setValidity("Params", function(object) {
     err <- character()
     r <- object
     if (length(r@xi) != 1) {
@@ -219,18 +219,18 @@ setValidity("PlanktonParams", function(object) {
     if (length(err) == 0) TRUE else err
 })
 
-#' @describeIn PlanktonParams Plot the steady-state solution
+#' @describeIn Params Plot the steady-state solution
 #' @export
-setMethod("plot", "PlanktonParams",
-    function(x, y, ...) {
+setMethod("plot", "Params",
+    function(x, y) {
         plot(x@wBar, x@psiBar, type="l",
              xlab="w/w*", ylab=expression(Psi))
     }
 )
 
-#' @describeIn PlanktonParams Show very short description of object
+#' @describeIn Params Show very short description of object
 #' @export
-setMethod("show", "PlanktonParams",
+setMethod("show", "Params",
     function(object) {
         cat("Parameters for the plankton model")
     }
