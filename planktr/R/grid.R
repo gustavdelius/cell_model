@@ -178,3 +178,18 @@ setMethod("show", "Grid",
               cat("Grid for the plankton model")
           }
 )
+
+#' @describeIn Params List grid and model parameter values
+#' @export
+setMethod("summary", "Grid",
+    function(object) {
+        cat("Grid:\nNs = ", object@Ns,
+            ", N = ", object@N,
+            ", SpeciesSpacing = ", object@SpeciesSpacing,
+            ", tmax = ", object@tmax,
+            ", Nt = ", object@Nt,
+            "\n"
+        )
+        callNextMethod()
+    }
+)

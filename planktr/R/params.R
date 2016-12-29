@@ -235,3 +235,35 @@ setMethod("show", "Params",
         cat("Parameters for the plankton model")
     }
 )
+
+setMethod("summary", "Params",
+    function(object) {
+        cat("Exponents:\n",
+            "  xi = ", object@xi,
+            ", nu = ", object@nu,
+            ", gamma = ", object@gamma,
+            "\nNutrient consumption:\n",
+            " a_inf = ", object@a_inf,
+            ", rr = ", object@rr,
+            "\nNutrient replenishment:\n",
+            "  rho_0 = ", object@rho_0,
+            ", Nu_0 = ", object@Nu_0,
+            "\nDuplication:\n",
+            "  w_th = ", object@w_th,
+            ", delta_q = ", object@delta_q,
+            ", k_0  = ", object@k_0,
+            ", ke = ", object@ke,
+            "\nCell growth rate:\n",
+            "  alpha = ", object@alpha,
+            ", b = ", object@b,
+            ", beta = ", object@beta,
+            "\nDeath rate: \n",
+            "  m = ", object@m,
+            "\nPredation: \n",
+            "  epsilon = ", object@epsilon,
+            ", s0 = ", object@s0,
+            ", beta_p = ", object@beta_p,
+            ", delta_p = ", object@delta_p
+        )
+    }
+)
