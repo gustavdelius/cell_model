@@ -172,8 +172,8 @@ fourier_interpolate <- function(p, n) {
 #' start with the same initial profile \code{psi} but with possibly different
 #' normalisations \code{pp}.
 #'
-#' The initial population density will be normalised so that the the nutrient
-#' will be at steady state at nutrient concentration \code{Nu}.
+#' The initial population density will be normalised so that the
+#' community spectrum is 1.
 #' @param r Object of type Grid. An object of type Sim will be coerced to type
 #' Grid.
 #' @param psi Vector giving unnormalised single-species steady
@@ -212,15 +212,10 @@ make_p0 <- function(r, psi, pp) {
         pp<-fourier_interpolate(p, r@Ns)
     }
 
-    p0 = outer(psi, pp)
+    p0 <- outer(psi, pp)
 
-    # Normalise it so that the nutrient is at steady-state
-    # For this we observe that in eq.(2.12) the sigma is proportional to psi
-    # So we get \rho and \sigma to cancel by rescaling \psi -> psi * rho/sigma
-    # Alternatively see eqs.(5.33)-(5.35)
-    integral <- colSums(r@w^(r@alpha+1)*p0)*r@dx
-    p0 <- p0 * r@rho_0*(1-r@NuBar/r@Nu_0) /
-        (r@a(r@NuBar)*sum(r@ws^(2-r@xi-r@gamma)*integral))
+    # Normalise it so that the community spectrum is equal to 1 on average
+    p0 <- p0/mean(community(p0, r))
 }
 
 #' Calculate moment of predation kernel
