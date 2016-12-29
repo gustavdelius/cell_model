@@ -66,7 +66,7 @@ getGrid <- function(sim) {
     as(sim, "Grid")
 }
 
-#' @describeIn Params Plot the solution for one species at one time
+#' @describeIn Sim Plot the solution for one species at one time
 #' @param sim Sim object
 #' @param t Time at which to plot. If the value is not available
 #' at that time, the last earlier time is used. Default: latest available time.
@@ -87,7 +87,7 @@ setMethod("plot", "Sim",
     }
 )
 
-#' @describeIn Params Show very short description of object
+#' @describeIn Sim Show very short description of object
 #' @export
 setMethod("show", "Sim",
           function(object) {

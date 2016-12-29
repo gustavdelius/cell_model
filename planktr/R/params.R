@@ -219,6 +219,8 @@ setValidity("Params", function(object) {
     if (length(err) == 0) TRUE else err
 })
 
+setGeneric("plot")
+
 #' @describeIn Params Plot the steady-state solution
 #' @export
 setMethod("plot", "Params",

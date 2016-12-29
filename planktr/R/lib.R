@@ -76,9 +76,9 @@ evolve_cell_pop <- function(p0, Nu0, r) {
 #' Determine community spectrum
 #'
 #' Adds together the population density of all species
-#' wrapped around assuming periodicity in species size
-#' Used in \code{\link{evolve_cel_pop}}
-#' This returns the \tilde{p}_c from the vignette that
+#' wrapped around assuming periodicity in species size.
+#' Used in \code{\link{evolve_cel_pop}}.
+#' This returns the $\tilde{p}_c$ from the vignette that
 #' is constant in the steady-state.
 #'
 #' @param p matrix of population densities (N x Ns)
@@ -105,7 +105,7 @@ community <- function(p, sim) {
 
 #' Get community spectrum
 #'
-#' This produces $\tilde{p_c}(t, w)}$ as defined in the vignette.
+#' This produces $\tilde{p}_c(t, w)$ as defined in the vignette.
 #' In the steady state this should be constant in w.
 #' @param sim Sim object
 #' @return matrix Nt x Na
@@ -115,7 +115,7 @@ get_community <- function(sim) {
 
 #' Plot community spectrum against time and size
 #'
-#' This plots $\tilde{p_c}(t, w)}$ as defined in the vignette.
+#' This plots $\tilde{p}_c(t, w)$ as defined in the vignette.
 #' @param sim Sim object
 plot3d_community <- function(sim) {
     com <- get_community(sim)
@@ -126,25 +126,7 @@ plot3d_community <- function(sim) {
 
 #' Plot community spectrum against size at one time
 #'
-#' This plots $\tilde{p_c}(t, w)}$ as defined in the vignette.
-#' @param sim Sim object
-#' @param t Time at which to plot. If the value is not available
-#' at that time, the last earlier time is used. Default: latest available time.
-plot_community <- function(sim, t=NULL) {
-    if (is.null(t)) {
-        ti <- sim@Nt+1
-    } else if (t >= 0) {
-        ti <- which(sim@t >= t)[1] - 1
-    }
-    com <- community(sim@p[ti, , ], sim=sim)
-    open3d()
-    plot(sim@xa, com, type="l", xlab="xa", ylab="p_c",
-         main=paste("Community spectrum at t=", sim@t[ti]))
-}
-
-#' Plot community spectrum against size at one time
-#'
-#' This plots $\tilde{p_c}(t, w)}$ as defined in the vignette.
+#' This plots $\tilde{p}_c(t, w)$ as defined in the vignette.
 #' @param sim Sim object
 #' @param t Time at which to plot. If the value is not available
 #' at that time, the last earlier time is used. Default: latest available time.
