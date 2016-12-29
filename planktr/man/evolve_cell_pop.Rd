@@ -4,10 +4,18 @@
 \alias{evolve_cell_pop}
 \title{Evolve cell population density using the population balance equation}
 \usage{
-evolve_cell_pop(r)
+evolve_cell_pop(p0, Nu0, r)
 }
 \arguments{
-\item{r}{PlanktonSim object}
+\item{p0}{N x Ns matrix or vector with initial population for all Ns species
+or a vector of length N with initial population for one species that is then
+replicated over all species. If missing, the steady-state solution is used
+and replicated over all species.}
+
+\item{Nu0}{Initial resource concentration. If missing, the steady-state value
+is used}
+
+\item{r}{Sim object}
 }
 \value{
 list of two elements:
