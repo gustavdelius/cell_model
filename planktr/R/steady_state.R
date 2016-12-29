@@ -1,22 +1,30 @@
+#' Determine steady state cell size distribution
+#'
+#' Using the analytic formulae in eqs.(4.16) to (4.21) of the paper
+#' @param r Object of class PlanktonParams
+#' @return List containing:
+#    \enumerate{
+#'     \item vector of steady-state population densities
+#'     \item nutrient concentration at steady state
+#'   }
 steady_state <- function(r) {
-    # Determine steady state cell size distribution
-    # from the analytic formulae in eqs.(4.16) to (4.21)
-    #
-    # Args:
-    #   r: object of class PlanktonParams
-    #
-    # Value:
-    #   List containing
-    #     vector of steady-state population densities
-    #     nutrient concentration at steady state
 
-    # Without loss of generality we can set w_* = 1 so that x=w/w_*=w
+    # Without loss of generality we can set w_* = 1 so that \tilde{w} = w/w_* = w
     # The population density for any other w_* can be obtained by scaling
     # see eqs.(6.1) and (6.2)
 
     wp <- min(r@wBar[r@wBar>=(0.5 + r@delta_q/2)])  # the point at which we glue
     kv <- r@k(r@wBar)
     qv <- r@q(r@wBar)
+
+    # Calculate growth rate from predation
+    # see eq.(5.9).
+    # We assume that the coefficient of the community size spectrum is 1
+    # Note change in exponent because we integrate with respect to log var
+    gp <- r@g(w, Nu0) + w^(-r@xi)*s_moment(r, -r@xi)
+    # Use constant mortality plus mortality from predation
+    # see eq.(5.10)
+    mv <- r@m + r@epsilon * w^(1-r@xi) * s_moment(r, r@gamma-2)
 
     p <- function(Nu0) {
         # Calculate the steady-state solution
@@ -29,11 +37,13 @@ steady_state <- function(r) {
         #   For the correct value of Nu0 that integral will be equal to 1
 
         w <- r@wBar
-        # Calculate growth rates for given Nu0
-        gv <- r@g(w, Nu0)
+        x <- log(r@wBar)
+
+        # Add growth rates from nutrient for given Nu0
+        gv <- gp + r@g(w, Nu0)
 
         # Calculate e(w) in eq.(4.16)
-        ep <- (kv+r@m)/gv
+        ep <- (kv+mv)/gv
         # First calculate for w < wp
         es <- rev(intx(rev(ep[w<=wp]), rev(w[w<=wp])))
         # then for w >= wp
@@ -46,7 +56,7 @@ steady_state <- function(r) {
         hp[w < r@w_th] <- 0
         h <- rep_len(0, length(w))
         for (i in 1:length(w)) {
-            h[i] <- 2*intx(hp*r@q(w[i]/w)/w, w)[length(w)-1]
+            h[i] <- 2*intx(hp*r@q(w[i]/w)/w, w)[length(w)]
         }
 
         # Calculate Theta in eq.(4.21). Because h/e is zero beyond w=wp, we simply

@@ -222,3 +222,18 @@ make_p0 <- function(r, psi, pp) {
     p0 <- p0 * r@rho_0*(1-r@NuBar/r@Nu_0) /
         (r@a(r@NuBar)*sum(r@ws^(2-r@xi-r@gamma)*integral))
 }
+
+#' Calculate moment of predation kernel
+#'
+#' The integral over s(x) * exp(lambda x)
+#' @param r Object of type Params
+#' @param lambda The exponent
+#' @return The value of the lambda-th moment
+s_moment <- function(r, lambda) {
+    assert_that(is(r, "Params"))
+    assert_that(is.number(lambda))
+    x <- r@beta_p + seq(-r@delta_p/2, r@delta_p/2, length.out = 1025)
+    s <- r@s(x) * exp(lambda * x)
+    dx <- r@delta_p/1024
+    sum(s[1:1024]+s[2:1025])/2*dx
+}
