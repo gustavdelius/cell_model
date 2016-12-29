@@ -136,6 +136,24 @@ plot_community <- function(sim, t=NULL) {
          main=paste("Community spectrum at t=", sim@t[ti]))
 }
 
+#' Plot community spectrum against size at one time
+#'
+#' This plots $\tilde{p_c}(t, w)}$ as defined in the vignette.
+#' @param sim PlanktonSim object
+#' @param t Time at which to plot. If the value is not available
+#' at that time, the last earlier time is used. Default: latest available time.
+plot_community <- function(sim, t=NULL) {
+    if (is.null(t)) {
+        ti <- sim@Nt+1
+    } else if (t >= 0) {
+        ti <- which(sim@t >= t)[1] - 1
+    }
+    com <- community(sim@p[ti, , ], sim=sim)
+    open3d()
+    plot(sim@xa, com, type="l", xlab="xa", ylab="p_c",
+         main=paste("Community spectrum at t=", sim@t[ti]))
+}
+
 #' Perform a Fourier interpolation
 #'
 #' Takes a discretisation at any number of equally-spaced points, performs
