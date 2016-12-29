@@ -72,7 +72,7 @@ simulate <- setClass("PlanktonSim",
         Ns = 32L,
         SpeciesSpacing = 8L,
         tmax = 1,
-        Nt = 100L
+        Nt = 99L
     )
 )
 
