@@ -21,10 +21,10 @@ steady_state <- function(r) {
     # see eq.(5.9).
     # We assume that the coefficient of the community size spectrum is 1
     # Note change in exponent because we integrate with respect to log var
-    gp <- r@g(w, Nu0) + w^(-r@xi)*s_moment(r, -r@xi)
+    gp <- r@wBar^(-r@xi)*s_moment(r, -r@xi)
     # Use constant mortality plus mortality from predation
     # see eq.(5.10)
-    mv <- r@m + r@epsilon * w^(1-r@xi) * s_moment(r, r@gamma-2)
+    mv <- r@m + r@epsilon * r@wBar^(1-r@xi) * s_moment(r, r@gamma-2)
 
     p <- function(Nu0) {
         # Calculate the steady-state solution

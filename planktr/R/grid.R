@@ -59,6 +59,7 @@ setClass("Grid",
 
 #' Set up grid for multi-species Plankton simulation
 #'
+#' @param params Object of class Params. If missing, default params are used.
 #' @param NS Number of species
 #' @param N  Number of steps within-species
 #' @param ds Number of steps between species
@@ -70,8 +71,8 @@ setClass("Grid",
 #' @param Nt Number of time steps at which to return population density.
 #' If the vector \code{t} is supplied than \code{Nt} is set from that.
 #' @return Object of type Grid
-Grid <- function(Ns = 32L, N = 32L, ds= 4L, t=NULL, tmax = 1, Nt = 99L,
-                 params=NULL, ...) {
+Grid <- function(params=NULL, Ns = 32L, N = 32L, ds= 4L,
+                 t=NULL, tmax = 1, Nt = 99L, ...) {
     if (is.null(params)) {
         params <- Params(...)
     }
@@ -178,7 +179,7 @@ setMethod("summary", "Grid",
     function(object) {
         cat("Grid:\nNs = ", object@Ns,
             ", N = ", object@N,
-            ", SpeciesSpacing = ", object@SpeciesSpacing,
+            ", ds = ", object@ds,
             ", tmax = ", object@tmax,
             ", Nt = ", object@Nt,
             "\n"

@@ -97,10 +97,6 @@ setClass("Params",
         xi = 0.15,
         nu = 0.85,
 
-        N  = 32L,  # Number of steps within-species
-        Ns = 40L,  # Number of species
-        SpeciesSpacing = 8L,   # Number of steps between species
-
         # Nutrient consumption
         a_inf = 2,
         rr    = 100,
@@ -125,7 +121,7 @@ setClass("Params",
 
         # Predation
         epsilon = 0.9,  # Conversion efficiency
-        s0      = 0.2,  # strength of predation
+        s0      = 0,  # strength of predation
         beta_p  = 2,    # log of predator/prey mass ratio
         delta_p = 1     # width of predation kernel
     )

@@ -14,15 +14,15 @@ setClass("Sim",
 
 #' Perform simulation of multi-species Plankton community
 #'
-#' @param p0  N x Nx matrix with initial population density.
-#' Defaults to steady-state solution
-#' @param Nu0 Initial nutrient concentration. Defaults to steady state value.
 #' @param grid Object of class Grid. If missing or an object of class Params is
 #' provided this is extended using the further arguments
 #' @param params Object of class Params. Only used if grid is missing.
+#' @param p0  N x Nx matrix with initial population density.
+#' Defaults to steady-state solution
+#' @param Nu0 Initial nutrient concentration. Defaults to steady state value.
 #' @params ... Arguments that will be used to initialise a Grid object if non
 #' is provided.
-Sim <- function(p0=NULL, Nu0=NULL, grid=NULL, params=NULL, ...) {
+Sim <- function(grid=NULL, params=NULL, p0=NULL, Nu0=NULL, ...) {
     if (is.null(grid)) {
         if(is.null(params)) {
             grid <- Grid(...)
@@ -41,6 +41,7 @@ Sim <- function(p0=NULL, Nu0=NULL, grid=NULL, params=NULL, ...) {
         # but if a strange number of intial values is given we complain
         stop("p0 has the incorrect length")
     } else {
+        assert_that(is.numeric(p0))
         p0 <- matrix(p0, nrow=grid@N, ncol=grid@Ns)
     }
 
