@@ -24,18 +24,7 @@ Sim <- function(..., p0=NULL, Nu0=NULL) {
     }
     # Population
     if (is.null(p0)) {
-        # if no initial population is provided use steady-state solution
-        # First subsample at N points
-        psi<-fourier_interpolate(r@psiBar[-1025], 32)
-        # Then replicate this over all species
-        p0 = matrix(psi, nrow=r@N, ncol=r@Ns)
-        # Then normalise it so that the nutrient is at steady-state
-        # For this we observe that in eq.(2.12) the sigma is proportional to psi
-        # So we get \rho and \sigma to cancel by rescaling \psi -> psi * rho/sigma
-        # Alternatively see eqs.(5.33)-(5.35)
-        integral <- colSums(r@w^(r@alpha+1)*p0)*r@dx
-        p0 <- p0 * r@rho_0*(1-r@NuBar/r@Nu_0) /
-            (r@a(r@NuBar)*sum(r@ws^(2-r@xi-r@gamma)*integral))
+        p0 <- make_p0(r)
     } else if ((length(p0) != r@N) && (length(p0) != (r@N * r@Ns))) {
         # If only a single species is provided we will replicate this
         # but if a strange number of intial values is given we complain

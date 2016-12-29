@@ -164,3 +164,61 @@ fourier_interpolate <- function(p, n) {
     }
     f/N
 }
+
+#' Make initial population density
+#'
+#' Produces an N x Ns matrix of population densities that can be used as
+#' initial condition for a simulation. It assumes that all species should
+#' start with the same initial profile \code{psi} but with possibly different
+#' normalisations \code{pp}.
+#'
+#' The initial population density will be normalised so that the the nutrient
+#' will be at steady state at nutrient concentration \code{Nu}.
+#' @param r Object of type Grid. An object of type Sim will be coerced to type
+#' Grid.
+#' @param psi Vector giving unnormalised single-species steady
+#' state solution. If this does not have length N it will
+#' be subsampled with Fourier interpolation. Default \code{r@psiBar}.
+#' @param Nu Steady-state nutrient concentration. Default: \code{r@NuBar}.
+#' @param pp Vector of length r@Ns giving the relative normalisation of the
+#' population densities. If this does not have length N it will
+#' be subsampled with Fourier interpolation. Default constant.
+#' @return Matrix of dimension N x Ns
+make_p0 <- function(r, psi, pp) {
+    if (class(r) == "Sim") {
+        r <- as(r, "Grid")
+    } else if (class(r) != "Grid") {
+        stop("The first argument must be an object of class Grid.")
+    }
+    if (missing(psi)) {
+        # We need to remove the right endpoint from r@psiBar first
+        psi <- r@psiBar[-length(r@psiBar)]
+    }
+    if (class(psi) != "numeric" || length(psi) < 8) {
+        stop("psi should be a numeric vector with at least 8 entries.")
+    }
+    if (length(psi) != r@N) {
+        # Subsample at N points
+        psi<-fourier_interpolate(psi, r@N)
+    }
+    if (missing(pp)) {
+        pp <- rep_len(1, r@Ns)
+    }
+    if (class(psi) != "numeric" || length(psi) < 1) {
+        stop("psi should be a numeric vector.")
+    }
+    if (length(pp) != r@Ns) {
+        # Subsample at N points
+        pp<-fourier_interpolate(p, r@Ns)
+    }
+
+    p0 = outer(psi, pp)
+
+    # Normalise it so that the nutrient is at steady-state
+    # For this we observe that in eq.(2.12) the sigma is proportional to psi
+    # So we get \rho and \sigma to cancel by rescaling \psi -> psi * rho/sigma
+    # Alternatively see eqs.(5.33)-(5.35)
+    integral <- colSums(r@w^(r@alpha+1)*p0)*r@dx
+    p0 <- p0 * r@rho_0*(1-r@NuBar/r@Nu_0) /
+        (r@a(r@NuBar)*sum(r@ws^(2-r@xi-r@gamma)*integral))
+}

@@ -145,8 +145,8 @@ setValidity("Grid", function(object) {
     if (length(object@N) != 1) {
         err <- c(err, "Length of N should be 1")
     }
-    if (object@N < 1) {
-        err <- c(err, "The number of steps can not be less than 1")
+    if (object@N < 8) {
+        err <- c(err, "The number of steps can not be less than 8")
     }
     if (length(object@SpeciesSpacing) != 1) {
         err <- c(err, "Length of SpeciesSpacing should be 1")
