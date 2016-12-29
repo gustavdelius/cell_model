@@ -75,21 +75,26 @@ getParams <- function(sim) {
 #' @describeIn Sim Plot the solution for one species at one time
 #' @param sim Sim object
 #' @param t Time at which to plot. If the value is not available
-#' at that time, the last earlier time is used. Default: latest available time.
+#' at that time, the next larger time is used. Default: latest available time.
 #' @param s Index of species to plot. Default 1.
 #' @export
 setMethod("plot", "Sim",
-    function(x, y, t=NULL, s=1) {
+    function(x, y, t=NULL, s=1, xlog=FALSE) {
         if (is.null(t)) {
-            ti <- sim@Nt+1
-        } else if (t >= 0) {
-            ti <- which(sim@t >= t)[1] - 1
+            ti <- x@Nt+1
         } else {
-            stop("The time can not be negative")
+            ti <- which(x@t >= t)[1]
+            if (is.na(ti)) {
+                ti <- length(r@t)
+                message("Defaulting to t=", r@t[ti])
+            }
         }
-        plot(sim@w, sim@p[ti, , s], type="l",
-             xlab="w", ylab=paste("p_1(t=", sim@t[ti], ")"),
-             main = paste("Size spectrum for species", s, "at t=", sim@t[ti]))
+        xx <- if (xlog) x@x else x@w
+        xlab <- if (xlog) "x" else "y"
+
+        plot(xx, x@p[ti, , s], type="l",
+             xlab=xlab, ylab=paste("p_1(t=", x@t[ti], ")"),
+             main = paste("Size spectrum for species", s, "at t=", x@t[ti]))
     }
 )
 

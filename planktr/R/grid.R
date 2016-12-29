@@ -60,6 +60,7 @@ setClass("Grid",
 #' Set up grid for multi-species Plankton simulation
 #'
 #' @param params Object of class Params. If missing, default params are used.
+#' If an object of class Grid is supplied, then its Params subobject is used.
 #' @param NS Number of species
 #' @param N  Number of steps within-species
 #' @param ds Number of steps between species
@@ -101,7 +102,7 @@ Grid <- function(params=NULL, Ns = 32L, N = 32L, ds= 4L,
     }
 
     r <- new("Grid", params, N=as.integer(N), Ns=as.integer(Ns),
-             ds=as.integer(ds), tmax=tmax, Nt=as.integer(Nt), t=t)
+             ds=as.integer(ds), tmax=tmax, Nt=as.integer(Nt), t=t, ...)
 
     # Create grids
     # Within-species cell size grid
