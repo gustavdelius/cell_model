@@ -14,35 +14,44 @@ setClass("Sim",
 
 #' Perform simulation of multi-species Plankton community
 #'
-Sim <- function(..., p0=NULL, Nu0=NULL) {
-    r <- new("Sim", ...)
-
-    # If necessary, call Grid
-    if (length(r@x) == 0) {
-        grid <- Grid(...)
-        return(Sim(grid, ..., p0=p0, Nu0=Nu0))
+#' @param p0  N x Nx matrix with initial population density.
+#' Defaults to steady-state solution
+#' @param Nu0 Initial nutrient concentration. Defaults to steady state value.
+#' @param grid Object of class Grid. If missing or an object of class Params is
+#' provided this is extended using the further arguments
+#' @param params Object of class Params. Only used if grid is missing.
+#' @params ... Arguments that will be used to initialise a Grid object if non
+#' is provided.
+Sim <- function(p0=NULL, Nu0=NULL, grid=NULL, params=NULL, ...) {
+    if (is.null(grid)) {
+        if(is.null(params)) {
+            grid <- Grid(...)
+        } else {
+            assert_that(class(params) == "Params")
+            grid <- Grid(params=params, ...)
+        }
     }
+    assert_that(is(grid, "Grid"))
+
     # Population
     if (is.null(p0)) {
-        p0 <- make_p0(r)
-    } else if ((length(p0) != r@N) && (length(p0) != (r@N * r@Ns))) {
+        p0 <- make_p0(grid)
+    } else if ((length(p0) != grid@N) && (length(p0) != (grid@N * grid@Ns))) {
         # If only a single species is provided we will replicate this
         # but if a strange number of intial values is given we complain
         stop("p0 has the incorrect length")
     } else {
-        p0 <- matrix(p0, nrow=r@N, ncol=r@Ns)
+        p0 <- matrix(p0, nrow=grid@N, ncol=grid@Ns)
     }
 
     if (is.null(Nu0)) {
         # If no initial resource is given, use steady-state resource
-        Nu0 <- r@NuBar
+        Nu0 <- grid@NuBar
     }
 
-    p <- evolve_cell_pop(p0, Nu0, r)
-    r@p <- p[[1]]
-    r@Nu <- p[[2]]
+    p <- evolve_cell_pop(p0, Nu0, grid)
 
-    return(r)
+    new("Sim", grid, p=p[[1]], Nu=p[[2]])
 }
 
 #' Extract grid from simulation
@@ -53,6 +62,13 @@ Sim <- function(..., p0=NULL, Nu0=NULL) {
 #' @return Object of class Grid
 getGrid <- function(sim) {
     as(sim, "Grid")
+}
+
+#' Extract parameters from simulation
+#' @param sim Object of class Sim
+#' @return Object of class Grid
+getParams <- function(sim) {
+    as(sim, "Params")
 }
 
 #' @describeIn Sim Plot the solution for one species at one time

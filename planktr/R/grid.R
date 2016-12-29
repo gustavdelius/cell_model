@@ -1,13 +1,12 @@
 #' An S4 class to represent a 3d grid on which to do a simulation
 #'
-#' @slot N Number of steps within-species
 #' @slot Ns Number of species
-#' @slot SpeciesSpacing Number of species per length of species
+#' @slot N Number of steps within-species
+#' @slot ds Number of steps between species.
 #'
 #' @slot x  Log sizes within a species.
 #' @slot dx log step size within a species.
 #' @slot w  Sizes within a species.
-#' @slot ds Number of steps between species.
 #' @slot dxs Log distance between species.
 #' @slot xs Log maximum sizes of species.
 #' @slot ws Maximum sizes of species.
@@ -27,9 +26,9 @@
 #' @include params.R
 setClass("Grid",
          slots = c(
-             N  = "integer",
              Ns = "integer",
-             SpeciesSpacing = "integer",
+             N  = "integer",
+             ds  = "integer",
 
              # Grids
              # within a species
@@ -37,7 +36,6 @@ setClass("Grid",
              dx = "numeric",
              w  = "numeric",
              # maximal species sizes
-             ds  = "integer",
              dxs = "numeric",
              xs =  "numeric",
              ws  =  "numeric",
@@ -56,26 +54,54 @@ setClass("Grid",
              Nt   = "integer",
              t    = "numeric"
          ),
-         contains = "Params",
-         prototype = list(
-             N = 32L,
-             Ns = 32L,
-             SpeciesSpacing = 8L,
-             tmax = 1,
-             Nt = 99L
-         )
+         contains = "Params"
 )
 
-#' Perform simulation of multi-species Plankton community
+#' Set up grid for multi-species Plankton simulation
 #'
-Grid <- function(...) {
-    r <- new("Grid", ...)
-
-    # If necessary, call Params
-    if (length(r@wBar) == 0) {
+#' @param NS Number of species
+#' @param N  Number of steps within-species
+#' @param ds Number of steps between species
+#' @param t  vector of time steps at which to return the solution. If this
+#' is not supplied then the default is a vector of \code{Nt} equally-spaced
+#' time points between 0 and \code{tmax}.
+#' @param tmax Time until which to run simulation. If the vector \code{t} of
+#' times is supplied than \code{tmax} is set from that.
+#' @param Nt Number of time steps at which to return population density.
+#' If the vector \code{t} is supplied than \code{Nt} is set from that.
+#' @return Object of type Grid
+Grid <- function(Ns = 32L, N = 32L, ds= 4L, t=NULL, tmax = 1, Nt = 99L,
+                 params=NULL, ...) {
+    if (is.null(params)) {
         params <- Params(...)
-        return(Grid(params, ...))
     }
+    assert_that(is(params, "Params"))
+    assert_that(is.count(Ns))
+    assert_that(is.count(N))
+    assert_that(is.count(ds))
+    assert_that(N > 8)
+    assert_that(ds <= N)
+
+    # Times
+    if (is.null(t)) {
+        if (tmax > 0 && Nt > 0) {
+            t <- seq(0, tmax, by=tmax/Nt)
+        } else {
+            stop("tmax and Nt must both be positive")
+        }
+    } else {
+        if (t[1] != 0) {
+            warning("The vector t did not start at 0. I added a zero to it.")
+            t <- c(0, t)
+        }
+        Nt <- length(t)
+        tmax <- t[Nt]
+        assert_that(tmax > 0)
+    }
+
+    r <- new("Grid", params, N=as.integer(N), Ns=as.integer(Ns),
+             ds=as.integer(ds), tmax=tmax, Nt=as.integer(Nt), t=t)
+
     # Create grids
     # Within-species cell size grid
     wmin <- r@w_th*(1-r@delta_q)/2  # Smallest possible cell size
@@ -90,7 +116,6 @@ Grid <- function(...) {
     # ws denotes the species maximum cell size
     # xs denotes the log of the species maximum cell size
     # We space our species equidistant in log size
-    r@ds = r@N%/%r@SpeciesSpacing
     r@dxs <- r@ds * r@dx  # Spacing of species in log size
     r@xs  <- seq(-(r@Ns-1)*r@dxs, 0, length.out=r@Ns)
     r@ws  <- exp(r@xs)
@@ -115,50 +140,18 @@ Grid <- function(...) {
         stop("The community spectrum is too short for the given feeding kernel.")
     }
 
-    # Times
-    if (length(r@t) == 0) {
-        if (r@tmax > 0 && r@Nt > 0) {
-            r@t <- seq(0, r@tmax, by=r@tmax/r@Nt)
-        } else {
-            stop("tmax and Nt must both be positive")
-        }
-    } else {
-        if (r@t[1] != 0) {
-            warning("The vector t did not start at 0. I added a zero to it.")
-            r@t <- c(0, r@t)
-        }
-        r@Nt <- length(r@t)
-        r@tmax <- r@t[r@Nt]
-    }
-
     return(r)
 }
 
 setValidity("Grid", function(object) {
-    err <- character()
-    if (length(object@Ns) != 1) {
-        err <- c(err, "Length of xi should be 1")
-    }
-    if (object@Ns < 1) {
-        err <- c(err, "The number Ns of species can not be less than 1")
-    }
-    if (length(object@N) != 1) {
-        err <- c(err, "Length of N should be 1")
-    }
-    if (object@N < 8) {
-        err <- c(err, "The number of steps can not be less than 8")
-    }
-    if (length(object@SpeciesSpacing) != 1) {
-        err <- c(err, "Length of SpeciesSpacing should be 1")
-    }
-    if (object@SpeciesSpacing < 1) {
-        err <- c(err, "SpeciesSpacing can not be less than 1")
-    }
-    if (object@N %% object@SpeciesSpacing) {
-        err <- c(err,
-                 "The number N of steps must be a multiple of the SpeciesSpacing")
-    }
-
+    err <- c(validate_that(is.count(object@Ns)),
+             validate_that(is.count(object@N)),
+             validate_that(object@N >= 8),
+             validate_that(is.count(object@ds)),
+             validate_that(object@ds <= object@N),
+             validate_that(object@Nt > 0)
+    )
+    err <- err[err != "TRUE"]
     if (length(err) == 0) TRUE else err
 })
 
