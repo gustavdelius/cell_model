@@ -132,7 +132,7 @@ species but not the distribution of sizes within species, there is the
 effect of "limited similarity" which prevents similar species to coexist.
 Even when such a model has a coexistence steady state, this steady state
 is structurally unstable against small perturbations in the parameters.
-Giving one species even just a tiny competitive advantage over the others 
+Giving one species even just a tiny competitive advantage over the others
 leads to a collapse, as expected from the competitive exclusion principle.
 The question we want to investigate with this package is whether this
 phenomenon can be avoided when the growth of cells is included in the model.
@@ -146,7 +146,7 @@ We also make use of the scaling properties of the rates to handle and
 store the populations in an economical way.
 
 The model is already described in the paper \cite{cuesta_sheldon_2016}.
-This vignette can therefore concentrate on two tasks: 
+This vignette can therefore concentrate on two tasks:
 to explain how we implemented the model numerically and
 to illustrate the use of the code.
 
@@ -154,9 +154,9 @@ to illustrate the use of the code.
 %-------------------------------------------------------------------------------
 \section{Population balance equation}
 In our model we describe the abundance density $\phy(w,\ws)$ of cells
-of size $w$ and species $w*$, where a species is specified by the 
-maximum size $w*$ for cells of that species. 
-The basis of the model is the population balance equation 
+of size $w$ and species $w*$, where a species is specified by the
+maximum size $w*$ for cells of that species.
+The basis of the model is the population balance equation
 \cite[eq.(2.10)]{cuesta_sheldon_2016} that describes the effect that growth,
 division and death of cells have on the abundance density:
 \begin{equation}
@@ -170,10 +170,10 @@ division and death of cells have on the abundance density:
 \end{equation}
 The first term on the right-hand side describes the dynamics of a growing organism as an extension of the McKendrick--von Foerster equation \cite{silvert:1978,silvert:1980} when $\gp(w,\ws)$ is the growth rate of a cell of size $\w$ and species $\ws$.
 The second term is the rate at which cells of size $w$ are produced from the
-division of cells of size $0<w'<\ws$. 
+division of cells of size $0<w'<\ws$.
 It is composed from the rate $\dup(w',\ws)$ at which a cell of size $w'$ and species $\ws$ divides and the probability density $\splt(w|w')$ that the daughter cell has size $w$ given that its parent had size $w'$ when it divided.
 The factor $2$ taking care of the fact that each parent cell yields two daughter cells.
-The third term is the rate at which cells of size $w$ divide. The last term is the rate at which cells of size $w$ die for whatever reason. 
+The third term is the rate at which cells of size $w$ divide. The last term is the rate at which cells of size $w$ die for whatever reason.
 The same equation describes this process for any species, hence $\ws$ enters as a parameter in every rate function involved.
 
 In the case of a discrete set of $M$ species with characteristic sizes
@@ -184,8 +184,8 @@ p(w, \ws) = \sum_{i=1}^M \delta(\ws-w_i)\,w_i^{-\gamma}p_i(w/w_i).
 Note how we express the abundance of cells in species $i$ as a function
 of the relative weight $w/w_i$ with respect to that species' maximum
 weight. This has the advantage that for
-all species this abundance has support in the same interval 
-$w/w_i\in[\wmin,1]$, were $\wmin$ is the smallest relative size possible 
+all species this abundance has support in the same interval
+$w/w_i\in[\wmin,1]$, were $\wmin$ is the smallest relative size possible
 for any cell.
 
 The reason for taking out the factor $w_i^{-\gamma}$ in \eqref{dis} is that it turns out that in the steady state this has the effect that all species are
@@ -208,7 +208,7 @@ w_i^\xi\partial_tp_i(\w)&=
 \end{split}\]
 for all $i=1,\dots M$ and $\w\in[\wmin,1]$.
 
-To numerically calculate the integral in \eqref{pbe} we make use of the fact that it is a convolution integral. 
+To numerically calculate the integral in \eqref{pbe} we make use of the fact that it is a convolution integral.
 To see this we write $\w=e^\x$ and $\w'=e^\y$ and
 observe that then $\w'^{-1}d\w'=dy$ so that the integral takes the form
 \[\begin{split}
@@ -222,10 +222,10 @@ The reason we can restrict the integral to run only from $\xt$ to $0$,
 where $\xt$ is the log of the threshold size below which not division is
 taking place, is that the factor $g_1(\y)$ is zero outside that interval anyway.
 With $\y$ ranging only over the interval $[\xt,0]$, the largest region in
-which the function $f_1$ gets evaluated is the interval $[\xmin, -\xt]$. 
+which the function $f_1$ gets evaluated is the interval $[\xmin, -\xt]$.
 Thus we can replace $f_1$ by a periodic function $\bar{f_1}$ with period $L=-\xmin$, without changing the value
-of the integral, because $\bar{f_1}$ is zero on the interval from $0$ to $-\xt$ and agrees with $f_1$ on the interval $[\xmin, 0]$. 
-We can then also replace $g$ by a periodic function $\bar{g}$ with the same period $L$, which again does not change the integral because $\bar{g}$ agrees with $g$ on the interval $[\xmin, 0]$ and is not used outside that interval. 
+of the integral, because $\bar{f_1}$ is zero on the interval from $0$ to $-\xt$ and agrees with $f_1$ on the interval $[\xmin, 0]$.
+We can then also replace $g$ by a periodic function $\bar{g}$ with the same period $L$, which again does not change the integral because $\bar{g}$ agrees with $g$ on the interval $[\xmin, 0]$ and is not used outside that interval.
 This gives us
 \[
 C_1(\x)=\int_{\xmin}^0\bar{f}(\x-\y)\bar{g}(\y)d\y.
@@ -239,13 +239,13 @@ it too can be calculated with spectral  methods: $\partial_\w=\w^{-1}\partial_\x
 
 %-------------------------------------------------------------------------------
 \section{Nutrient equation}
-We assume that all cells consume a common nutrient whose concentration we denote by $\N$. 
+We assume that all cells consume a common nutrient whose concentration we denote by $\N$.
 In the absence of growth through predation on other cells, we assume a
 von Bertalannfy growth model
 \begin{equation}
 g(\w)= a(\N)\w^\alpha-b \w^\beta,
 \end{equation}
-where the positive first term comes form nutrient intake and the negative second term is the metabolic loss rate. 
+where the positive first term comes form nutrient intake and the negative second term is the metabolic loss rate.
 For the dependence on the nutrient concentration we use
 \begin{equation}
 a(\N) = a_\infty\frac{\N}{\N+\N_0}.
@@ -280,7 +280,7 @@ eats another givem cell of size $w'$ is given by $S(w,w') = w^\nu s(w/w')$.
 Both the death term and the growth term will receive an additional contribution from predation.
 
 \subsection{Death from predation}
-The contribution to the death rate $M(w,\ws)$ from predation is 
+The contribution to the death rate $M(w,\ws)$ from predation is
 \begin{equation}\label{Mp}
 M_P(w,\ws)=\int w'^\nu s(w'/w)p_c(w')dw'
 \end{equation}
@@ -303,15 +303,15 @@ C_2(x)=\int g_2(x-y)f_2(y)dy = \int g_2(y)f_2(x-y)dy
 \end{equation}
 with
 \begin{equation}
-g_2(x)=s\left(e^{-x}\right)e^{-\xi x}\ \text{ and }\ 
+g_2(x)=s\left(e^{-x}\right)e^{-\xi x}\ \text{ and }\
 f_2(x)=\tilde{p}_c\left(e^{x}\right).
 \end{equation}
 We need to evaluate this convolution for all values of $x$ in the interval $[\xmin,\xmax]$ where $\xmin$ and $\xmax$ are the log
-of the smallest and the largest cell size among all species. 
-We assume that the predation kernel $s(x)$ has 
+of the smallest and the largest cell size among all species.
+We assume that the predation kernel $s(x)$ has
 support only in a finite interval $[-\beta_P-\Delta_P/2, -\beta_P+\Delta_P/2]$
 with the size $\Delta_P$ of that interval and the
-typical predator/prey mass ration $\beta_P$ so that 
+typical predator/prey mass ration $\beta_P$ so that
 $[-\beta_P-\Delta_P/2, -\beta_P+\Delta_P/2]\subset[\xmin,\xmax]$.
 
 For simplicity we will from now on choose mass units so that $\xmax=0$.
@@ -340,7 +340,7 @@ G_P(w,\ws)=\epsilon w^{1-\xi}\int s(w/w')(w/w')^{\gamma-2} p_c(w')w'^{-1}dw'
 \end{equation}
 Here $C_3(x)$ is the convolution integral with
 \begin{equation}
-g_3(x)=s\left(e^{x}\right)e^{(\gamma-2) x}\ \text{ and }\ 
+g_3(x)=s\left(e^{x}\right)e^{(\gamma-2) x}\ \text{ and }\
 f_3(x)=\tilde{p}_c\left(e^{x}\right).
 \end{equation}
 Now the support of $g_3$ is $[\beta_P-\Delta_P/2\beta_P+\Delta_P/2]$
