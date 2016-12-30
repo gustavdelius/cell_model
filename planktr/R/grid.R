@@ -174,7 +174,7 @@ setMethod("show", "Grid",
           }
 )
 
-#' @describeIn Params List grid and model parameter values
+#' @describeIn Grid List grid and model parameter values
 #' @export
 setMethod("summary", "Grid",
     function(object) {

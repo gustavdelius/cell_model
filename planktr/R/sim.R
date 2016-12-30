@@ -2,12 +2,20 @@
 
 #' @slot p Array (Nt x N x Ns) of simulated population densities.
 #' @slot Nu Vector of simulated nutrient concentrations.
+#' @slot rho_0 Nutrient replenishment rate when nutrient is low.
+#' @slot Nu_0 Nutrient carrying capacity in absence of consumption.
+#' @slot dNu Function giving nutrient replenishment rate.
 #' @include params.R
 #' @include grid.R
 setClass("Sim",
     slots = c(
         p   = "array",
-        Nu  = "numeric"
+        Nu  = "numeric",
+
+        # Nutrient replenishment
+        rho_0 = "numeric",
+        Nu_0  = "numeric",
+        dNu = "function"
     ),
     contains = "Grid"
 )
@@ -50,9 +58,30 @@ Sim <- function(grid=NULL, params=NULL, p0=NULL, Nu0=NULL, ...) {
         Nu0 <- grid@NuBar
     }
 
-    p <- evolve_cell_pop(p0, Nu0, grid)
+    # Arbitrary choice for carrying capacity at twice the initial value
+    Nu_0  <- 2 * Nu0
+    # Set rho_0 so that Nu0 is the steady-state resource for the given p0
+    integral <- colSums(grid@w^(grid@alpha+1)*p0)*grid@dx
+    rho_0 <- (grid@a(Nu0)*sum(grid@ws^(2-grid@xi-grid@gamma)*integral)) /
+        (1-Nu0/Nu_0)
+    # Nutrient growth rate
+    # See eq.(2.12) and (2.13)
+    dNu <- function(w, Nu, psi, r) {
+        # Args:
+        #   Nu: Nutrient concentration
+        #   psi: N x Ns matrix with each column the scaled population of one
+        #        species
+        integral <- colSums(w^(r@alpha+1)*psi)*r@dx
+        r@rho_0*(1-Nu/r@Nu_0) - (r@a(Nu)*sum(r@ws^(2-r@xi-r@gamma)*integral))
+    }
 
-    new("Sim", grid, p=p[[1]], Nu=p[[2]])
+    sim <- new("Sim", grid, rho_0=rho_0, Nu_0=Nu_0, dNu=dNu)
+
+    p <- evolve_cell_pop(p0, Nu0, sim)
+    sim@p  <- p[[1]]
+    sim@Nu <- p[[2]]
+
+    sim
 }
 
 #' Extract grid from simulation
@@ -103,5 +132,17 @@ setMethod("plot", "Sim",
 setMethod("show", "Sim",
           function(object) {
               cat("A simulation of the plankton model")
+          }
+)
+
+#' @describeIn Sim List grid and model parameter values
+#' @export
+setMethod("summary", "Sim",
+          function(object) {
+              callNextMethod()
+              cat("\nNutrient replenishment:\n",
+                  "  rho_0 = ", object@rho_0,
+                  ", Nu_0 = ", object@Nu_0
+              )
           }
 )

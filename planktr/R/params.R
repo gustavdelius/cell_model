@@ -8,8 +8,6 @@
 #' Default 2
 #' @slot rr Half saturation level at which nutrient consumption is half of the
 #' maximal value \code{a_inf}.
-#' @slot rho_0 Nutrient replenishment rate when nutrient is low.
-#' @slot Nu_0 Nutrient carrying capacity in absence of consumption.
 #' @slot w_th Threshold size for duplication. Cells smaller than \code{w_th}
 #' can not duplicate.
 #' @slot delta_q Width of offspring size distribution. Daughter cells can have
@@ -53,9 +51,6 @@ setClass("Params",
         # Nutrient consumption
         a_inf = "numeric",
         rr    = "numeric",
-        # Nutrient replenishment
-        rho_0 = "numeric",
-        Nu_0  = "numeric",
 
         # Duplication
         w_th    = "numeric",
@@ -79,7 +74,6 @@ setClass("Params",
 
         # Rates
         a   = "function",
-        dNu = "function",
         k   = "function",
         q   = "function",
         g   = "function",
@@ -100,10 +94,6 @@ setClass("Params",
         # Nutrient consumption
         a_inf = 2,
         rr    = 100,
-        abar  = 0.7,  # Nutrient consumption at steady state
-        # Nutrient replenishment
-        rho_0 = 100,
-        Nu_0  = 100,
 
         # Duplication
         w_th    = 0.7,    # threshold for duplication
@@ -138,16 +128,6 @@ Params <- function(...) {
     # See eq.(2.11)
     r@a <- function(Nu) {
         r@a_inf*Nu/(r@rr+Nu)
-    }
-    # Nutrient growth rate
-    # See eq.(2.12) and (2.13)
-    r@dNu <- function(w, Nu, psi, r) {
-        # Args:
-        #   Nu: Nutrient concentration
-        #   psi: N x Ns matrix with each column the scaled population of one
-        #        species
-        integral <- colSums(w^(r@alpha+1)*psi)*r@dx
-        r@rho_0*(1-Nu/r@Nu_0) - (r@a(Nu)*sum(r@ws^(2-r@xi-r@gamma)*integral))
     }
 
     # Duplication rate
@@ -243,9 +223,6 @@ setMethod("summary", "Params",
             "\nNutrient consumption:\n",
             " a_inf = ", object@a_inf,
             ", rr = ", object@rr,
-            "\nNutrient replenishment:\n",
-            "  rho_0 = ", object@rho_0,
-            ", Nu_0 = ", object@Nu_0,
             "\nDuplication:\n",
             "  w_th = ", object@w_th,
             ", delta_q = ", object@delta_q,
