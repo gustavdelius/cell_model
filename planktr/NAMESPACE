@@ -2,3 +2,4 @@
 
 exportMethods(plot)
 exportMethods(show)
+exportMethods(summary)

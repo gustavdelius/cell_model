@@ -3,8 +3,8 @@
 #' Using the analytic formulae in eqs.(4.16) to (4.21) of the paper
 #' @param r Object of class PlanktonParams
 #' @return List containing:
-#    \enumerate{
-#'     \item vector of steady-state population densities
+#'   \enumerate{
+#'     \item vector of steady-state population densities $\psi$
 #'     \item nutrient concentration at steady state
 #'   }
 steady_state <- function(r) {

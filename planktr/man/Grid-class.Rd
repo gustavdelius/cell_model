@@ -3,11 +3,11 @@
 \docType{class}
 \name{Grid-class}
 \alias{Grid-class}
-\alias{plot,Grid-method}
+\alias{plot,Grid,ANY-method}
 \alias{show,Grid-method}
 \title{An S4 class to represent a 3d grid on which to do a simulation}
 \usage{
-\S4method{plot}{Grid}(x, y, ...)
+\S4method{plot}{Grid,ANY}(x, y, ...)
 
 \S4method{show}{Grid}(object)
 }
@@ -23,19 +23,17 @@ An S4 class to represent a 3d grid on which to do a simulation
 \section{Slots}{
 
 \describe{
-\item{\code{N}}{Number of steps within-species}
-
 \item{\code{Ns}}{Number of species}
 
-\item{\code{SpeciesSpacing}}{Number of species per length of species}
+\item{\code{N}}{Number of steps within-species}
+
+\item{\code{ds}}{Number of steps between species.}
 
 \item{\code{x}}{Log sizes within a species.}
 
 \item{\code{dx}}{log step size within a species.}
 
 \item{\code{w}}{Sizes within a species.}
-
-\item{\code{ds}}{Number of steps between species.}
 
 \item{\code{dxs}}{Log distance between species.}
 

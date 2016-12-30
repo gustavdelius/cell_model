@@ -8,13 +8,13 @@
 \alias{plot3d,Sim,numeric,missing-method}
 \title{Produce 3 dimenstional plot of the simulation result}
 \usage{
-plot3d(r, t, xs)
+plot3d(r, t, xs, ...)
 
-\S4method{plot3d}{Sim,numeric,missing}(r, t)
+\S4method{plot3d}{Sim,numeric,missing}(r, t, zlog = FALSE)
 
-\S4method{plot3d}{Sim,missing,numeric}(r, xs)
+\S4method{plot3d}{Sim,missing,numeric}(r, xs, zlog = FALSE)
 
-\S4method{plot3d}{Sim,missing,missing}(r)
+\S4method{plot3d}{Sim,missing,missing}(r, zlog = FALSE)
 }
 \arguments{
 \item{r}{Object of type Sim}

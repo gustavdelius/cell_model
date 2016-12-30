@@ -3,17 +3,17 @@
 \docType{class}
 \name{Sim-class}
 \alias{Sim-class}
-\alias{plot,Sim-method}
+\alias{plot,Sim,ANY-method}
 \alias{show,Sim-method}
 \title{An S4 class to represent the simulation of a plankton model}
 \usage{
-\S4method{plot}{Sim}(x, y, t = NULL, s = 1)
+\S4method{plot}{Sim,ANY}(x, y, t = NULL, s = 1, xlog = FALSE)
 
 \S4method{show}{Sim}(object)
 }
 \arguments{
 \item{t}{Time at which to plot. If the value is not available
-at that time, the last earlier time is used. Default: latest available time.}
+at that time, the next larger time is used. Default: latest available time.}
 
 \item{s}{Index of species to plot. Default 1.}
 

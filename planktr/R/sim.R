@@ -20,7 +20,7 @@ setClass("Sim",
 #' @param p0  N x Nx matrix with initial population density.
 #' Defaults to steady-state solution
 #' @param Nu0 Initial nutrient concentration. Defaults to steady state value.
-#' @params ... Arguments that will be used to initialise a Grid object if non
+#' @param ... Arguments that will be used to initialise a Grid object if non
 #' is provided.
 Sim <- function(grid=NULL, params=NULL, p0=NULL, Nu0=NULL, ...) {
     if (is.null(grid)) {

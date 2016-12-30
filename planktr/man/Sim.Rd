@@ -4,7 +4,21 @@
 \alias{Sim}
 \title{Perform simulation of multi-species Plankton community}
 \usage{
-Sim(..., p0 = NULL, Nu0 = NULL)
+Sim(grid = NULL, params = NULL, p0 = NULL, Nu0 = NULL, ...)
+}
+\arguments{
+\item{grid}{Object of class Grid. If missing or an object of class Params is
+provided this is extended using the further arguments}
+
+\item{params}{Object of class Params. Only used if grid is missing.}
+
+\item{p0}{N x Nx matrix with initial population density.
+Defaults to steady-state solution}
+
+\item{Nu0}{Initial nutrient concentration. Defaults to steady state value.}
+
+\item{...}{Arguments that will be used to initialise a Grid object if non
+is provided.}
 }
 \description{
 Perform simulation of multi-species Plankton community

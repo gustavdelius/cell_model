@@ -2,11 +2,35 @@
 % Please edit documentation in R/grid.R
 \name{Grid}
 \alias{Grid}
-\title{Perform simulation of multi-species Plankton community}
+\title{Set up grid for multi-species Plankton simulation}
 \usage{
-Grid(...)
+Grid(params = NULL, Ns = 32L, N = 32L, ds = 4L, t = NULL, tmax = 1,
+  Nt = 99L, ...)
+}
+\arguments{
+\item{params}{Object of class Params. If missing, default params are used.
+If an object of class Grid is supplied, then its Params subobject is used.}
+
+\item{N}{Number of steps within-species}
+
+\item{ds}{Number of steps between species}
+
+\item{t}{vector of time steps at which to return the solution. If this
+is not supplied then the default is a vector of \code{Nt} equally-spaced
+time points between 0 and \code{tmax}.}
+
+\item{tmax}{Time until which to run simulation. If the vector \code{t} of
+times is supplied than \code{tmax} is set from that.}
+
+\item{Nt}{Number of time steps at which to return population density.
+If the vector \code{t} is supplied than \code{Nt} is set from that.}
+
+\item{NS}{Number of species}
+}
+\value{
+Object of type Grid
 }
 \description{
-Perform simulation of multi-species Plankton community
+Set up grid for multi-species Plankton simulation
 }
 
