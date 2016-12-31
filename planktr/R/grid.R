@@ -131,6 +131,9 @@ Grid <- function(params=NULL, Ns = 32L, N = 32L, ds= 4L,
     # Without wrapping around the size spectrum will be longer:
     r@Nal <- (r@Ns-1L)*r@ds+r@N
     r@xal <- seq(r@xs[1]+r@x[1], -r@dx, by=r@dx)
+    if (r@Nal <= r@Na) {
+        stop("You need enought species so that Ns * ds > N")
+    }
 
     # Create vectors containing powers
     r@wsmgamma <- exp(r@xs*(-r@gamma))

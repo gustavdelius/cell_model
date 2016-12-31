@@ -17,8 +17,8 @@ evolve_cell_pop <- function(p0, Nu0, r) {
     Na <- r@Na
 
     # Predation
-    mkernel <- r@dx/Na*fft(r@s(-r@xa)*exp(r@xa*(-r@xi)))
-    gkernel <- r@dx/Na*fft(r@epsilon*r@s(r@xa-r@xa[1])*exp(r@xa*(r@gamma-2)))
+    mkernel <- r@dx/Na*fft(r@s(-r@xa)*exp(r@xa*(r@xi)))
+    gkernel <- r@dx/Na*fft(r@epsilon*r@s(r@xa-r@xa[1])*exp((r@xa-r@xa[1])*(r@gamma-2)))
 
     ks <- r@k(r@w)
     # fft of offspring size distribution
@@ -83,8 +83,9 @@ evolve_cell_pop <- function(p0, Nu0, r) {
 #'
 #' @param p matrix of population densities (N x Ns)
 #' @param sim Sim object
+#' @param smooth Boolean flag. If true the output will be smoothed
 #' @return A vector of community population densities at points \code{xa}
-community <- function(p, sim) {
+community <- function(p, sim, smooth=FALSE) {
     pc <- vector("numeric", length=sim@Nal)
     idx <- 1:sim@N
     for (i in 1:sim@Ns) {
@@ -100,6 +101,11 @@ community <- function(p, sim) {
         top <- (2L*sim@Na-sim@Nal+1L):sim@Na  # the top Nal-Na indices
         pcp[top] <- pcp[top] + pc[1:(sim@Nal-sim@Na)]
     }
+
+    if (smooth && sim@ds > 1) {
+        # smooth out tiny oscillations that are due to the gap between species
+        pcp <- as.vector(filter(pcp, rep(1/sim@ds, sim@ds), circular = TRUE))
+    }
     pcp
 }
 
@@ -108,9 +114,10 @@ community <- function(p, sim) {
 #' This produces $\tilde{p}_c(t, w)$ as defined in the vignette.
 #' In the steady state this should be constant in w.
 #' @param sim Sim object
+#' @param smooth Boolean flag. If true the output will be smoothed
 #' @return matrix Nt x Na
-get_community <- function(sim) {
-    aaply(sim@p, 1, "community", sim=sim)
+get_community <- function(sim, smooth=TRUE) {
+    aaply(sim@p, 1, "community", sim=sim, smooth=smooth)
 }
 
 #' Plot community spectrum against time and size
@@ -179,7 +186,6 @@ fourier_interpolate <- function(p, n) {
 #' @param psi Vector giving unnormalised single-species steady
 #' state solution. If this does not have length N it will
 #' be subsampled with Fourier interpolation. Default \code{r@psiBar}.
-#' @param Nu Steady-state nutrient concentration. Default: \code{r@NuBar}.
 #' @param pp Vector of length r@Ns giving the relative normalisation of the
 #' population densities. If this does not have length N it will
 #' be subsampled with Fourier interpolation. Default constant.
@@ -216,19 +222,4 @@ make_p0 <- function(r, psi, pp) {
 
     # Normalise it so that the community spectrum is equal to 1 on average
     p0 <- p0/mean(community(p0, r))
-}
-
-#' Calculate moment of predation kernel
-#'
-#' The integral over s(x) * exp(lambda x)
-#' @param r Object of type Params
-#' @param lambda The exponent
-#' @return The value of the lambda-th moment
-s_moment <- function(r, lambda) {
-    assert_that(is(r, "Params"))
-    assert_that(is.number(lambda))
-    x <- r@beta_p + seq(-r@delta_p/2, r@delta_p/2, length.out = 1025)
-    s <- r@s(x) * exp(lambda * x)
-    dx <- r@delta_p/1024
-    sum(s[1:1024]+s[2:1025])/2*dx
 }
