@@ -38,10 +38,15 @@ evolve_cell_pop <- function(p0, Nu0, r) {
 
         # Calculate growth rate
         gp <- Re(fft(gkernel*pcp, inverse = TRUE))  # from predation
-        gr <- r@g(r@w, Nu) # from resource
+        # unwrap
+        top <- (2L*r@Na-r@Nal+1L):r@Na  # the top Nal-Na indices
+        gp <- c(gp[top], gp)
+        # from resource
+        gr <- r@g(r@w, Nu)
 
         # Calculate death rate
         mp <- Re(fft(mkernel*pcp, inverse = TRUE)) # from predation
+        mp <- c(mp[top], mp)  # unwrap
 
         # Calculate right-hand side of population balance equation
         f <- matrix(0, nrow = N, ncol = Ns)
@@ -56,6 +61,7 @@ evolve_cell_pop <- function(p0, Nu0, r) {
                 # growth part
                 -Re(fft(fft(gs*p[,i])*k1, inverse=TRUE)/N)/r@w
             )
+            idx <- idx + r@ds
         }
         nutrientGrowth <- r@dNu(r@w, Nu, p, r)
 
