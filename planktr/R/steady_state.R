@@ -76,7 +76,7 @@ steady_state <- function(r) {
 
     # Find the mortality rate constant that satisfies the boundary condition
     # in eq. (4.18)
-    Nu <- uniroot(function(Nu0) p(Nu0)[[2]]-1, lower=1, upper=100)[["root"]]
+    Nu <- uniroot(function(Nu0) p(Nu0)[[2]]-1, lower=1, upper=1000)[["root"]]
 
     # Calculate and return the solution
     psi <- p(Nu)[[1]]
