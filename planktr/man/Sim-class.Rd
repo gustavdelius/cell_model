@@ -3,13 +3,16 @@
 \docType{class}
 \name{Sim-class}
 \alias{Sim-class}
-\alias{plot,Sim,ANY-method}
+\alias{plot,Sim-method}
 \alias{show,Sim-method}
+\alias{summary,Sim-method}
 \title{An S4 class to represent the simulation of a plankton model}
 \usage{
-\S4method{plot}{Sim,ANY}(x, y, t = NULL, s = 1, xlog = FALSE)
+\S4method{plot}{Sim}(x, y, t = NULL, s = 1, xlog = FALSE)
 
 \S4method{show}{Sim}(object)
+
+\S4method{summary}{Sim}(object)
 }
 \arguments{
 \item{t}{Time at which to plot. If the value is not available
@@ -27,6 +30,8 @@ An S4 class to represent the simulation of a plankton model
 \item \code{plot}: Plot the solution for one species at one time
 
 \item \code{show}: Show very short description of object
+
+\item \code{summary}: List grid and model parameter values
 }}
 \section{Slots}{
 
@@ -34,5 +39,11 @@ An S4 class to represent the simulation of a plankton model
 \item{\code{p}}{Array (Nt x N x Ns) of simulated population densities.}
 
 \item{\code{Nu}}{Vector of simulated nutrient concentrations.}
+
+\item{\code{rho_0}}{Nutrient replenishment rate when nutrient is low.}
+
+\item{\code{Nu_0}}{Nutrient carrying capacity in absence of consumption.}
+
+\item{\code{dNu}}{Function giving nutrient replenishment rate.}
 }}
 

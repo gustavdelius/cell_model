@@ -10,6 +10,6 @@ plot3d_community(sim)
 \item{sim}{Sim object}
 }
 \description{
-This plots $\tilde{p}_c(t, w)$ as defined in the vignette.
+This plots \eqn{\tilde{p}_c(t, w)} as defined in the vignette.
 }
 

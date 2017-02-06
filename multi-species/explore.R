@@ -1,11 +1,60 @@
 library("deSolve")
 library("rgl")
 library("plyr")
+library("assertthat")
+library("ggplot2")
 devtools::load_all(".")
 r <- Params()
+summary(r)
 plot(r)
-sim <- Sim(r)
+sim <- Sim(params=r)
 plot(sim)
+plot3d(sim, t=1)
+plot3d(sim, xs=0)
+plot3d(sim)
+plot(sim@t, sim@Nu, type="l")
+
+gr <- getGrid(sim)
+p00 <- exp(-100*(gr@x+0.5)^2)
+plot(gr@x, p00, type="l")
+p0 <- make_p0(gr, p00)
+sim <- Sim(params=r, tmax=1, p0=p0)
+plot3d(sim, xs=0)
+summary(sim)
+
+params <- Params(s0=5, ke=4, k_0=50000, xi=0, beta_p=1, delta_p=2)
+plot(params)
+sim <- Sim(params=params, tmax=10)
+plot3d(sim)
+plot3d(sim, xs=0)
+plot3d(sim, t=10)
+plot(sim@t, sim@Nu, type="l")
+
+pp <- 1+rnorm(sim@Ns, 0, 0.01)
+#pp <- 1+sin(sim@xs*2*pi/sim@xs[1])/50
+plot(pp)
+p0 <- make_p0(sim, pp=pp)
+sim <- Sim(params=params, tmax=15, p0=p0)
+plot3d(sim)
+sim <- Sim(params=params, tmax=25, p0=p0)
+plot3d(sim)
+plot3d(sim, xs=0)
+plot3d(sim, t=25)
+plot(sim@t, sim@Nu, type="l")
+
+pp <- 1+exp(-40*(sim@xs+2)^2)/10
+plot(pp, type="l")
+p0 <- make_p0(sim, pp=pp)
+sim <- Sim(params=params, tmax=10, p0=p0)
+plot3d(sim)
+plot3d(sim, xs=0)
+plot3d(sim, t=10)
+plot(sim@t, sim@Nu, type="l")
+
+sim2 <- Sim(params=params, tmax=5, p0=sim@p[sim@Nt, , ], Nu0=sim@Nu[sim@Nt])
+plot3d(sim2, xs=0)
+plot(sim2@t, sim2@Nu, type="l")
+plot3d(sim2)
 
 persp3d(sim@t, sim@w, sim@p[, , 1], col = "lightblue",
         xlab="t", ylab="w", zlab="p")
@@ -45,3 +94,31 @@ for (ti in 1:length(t)) {
     pcpt[ti,] <- community_spectrum(psit[ti,1:N,])
 }
 persp3d(t, xa, pcpt, col = "lightblue")
+
+###############################
+r <- sim
+
+N <- r@N
+Ns <- r@Ns
+Na <- r@Na
+
+p0 <- r@p[1, , ]
+persp3d(r@x, r@xs, p0, col = "lightblue")
+com <- community(p0, r, smooth=TRUE)
+plot(r@xa, com, type="l")
+pcp <- fft(community(p0, r))
+
+# Predation
+mkernel <- r@dx/Na*fft(r@s(-r@xa)*exp(r@xa*(r@xi)))
+gkernel <- r@dx/Na*fft(r@epsilon*r@s(r@xa-r@xa[1])*exp((r@xa-r@xa[1])*(r@gamma-2)))
+gp <- Re(fft(gkernel*pcp, inverse = TRUE))
+# unwrap
+top <- (2L*r@Na-r@Nal+1L):r@Na  # the top Nal-Na indices
+gp <- c(gp[top], gp)
+mp <- Re(fft(mkernel*pcp, inverse = TRUE))
+plot(r@xa, gp, type="l")
+plot(r@xa, mp, type="l")
+
+
+
+

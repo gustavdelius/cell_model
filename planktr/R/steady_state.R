@@ -4,7 +4,7 @@
 #' @param r Object of class PlanktonParams
 #' @return List containing:
 #'   \enumerate{
-#'     \item vector of steady-state population densities $\psi$
+#'     \item vector of steady-state population densities \eqn{\psi}
 #'     \item nutrient concentration at steady state
 #'   }
 steady_state <- function(r) {
@@ -76,7 +76,8 @@ steady_state <- function(r) {
 
     # Find the mortality rate constant that satisfies the boundary condition
     # in eq. (4.18)
-    Nu <- uniroot(function(Nu0) p(Nu0)[[2]]-1, lower=1, upper=1000)[["root"]]
+    Nu <- uniroot(function(Nu0) p(Nu0)[[2]]-1, lower=1, upper=100,
+                  extendInt="upX")[["root"]]
 
     # Calculate and return the solution
     psi <- p(Nu)[[1]]

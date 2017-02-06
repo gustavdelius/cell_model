@@ -13,6 +13,6 @@ plot_community(sim, t = NULL)
 at that time, the last earlier time is used. Default: latest available time.}
 }
 \description{
-This plots $\tilde{p}_c(t, w)$ as defined in the vignette.
+This plots \eqn{\tilde{p}_c(t, w)} as defined in the vignette.
 }
 

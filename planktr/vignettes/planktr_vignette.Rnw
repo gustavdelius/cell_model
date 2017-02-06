@@ -131,7 +131,7 @@ affects the stability of the multi-species community. In the usual models
 of coexistence, where one models only the total abundance of the different
 species but not the distribution of sizes within species, there is the
 effect of "limiting similarity" which prevents similar species to coexist.
-Even when such a model has a coexistence steady state, this steady state
+Even when such a model has a dynamically stable coexistence steady state, this steady state
 is structurally unstable against small perturbations in the parameters.
 Giving one species even just a tiny competitive advantage over the others
 leads to a collapse, as expected from the competitive exclusion principle.
@@ -154,8 +154,8 @@ to illustrate the use of the code.
 
 %-------------------------------------------------------------------------------
 \section{Cell population dynamics}
-In our model we describe the abundance density $\phy(w,\ws)$ of plankton cells
-of size $w$ and species $\ws$, where a species is specified by the
+In our model we describe the abundance density $\phy(w,\ws,t)$ of plankton cells
+of size $w$ and species $\ws$ at time $t$, where a species is specified by the
 maximum size $\ws$ for cells of that species.
 
 \subsection{Population balance equation}
@@ -387,7 +387,7 @@ with
 g_3(x)=s\left(e^{x}\right)e^{(\gamma-2) x}\ \text{ and }\
 f_3(x)=\tilde{p}_c\left(e^{x}\right).
 \end{equation}
-We need to evaluate this convolution for all values of $x$ in the interval $[\xmin,0]$
+We need to evaluate this convolution for all values of $x$ in the interval $[\xmin,0]$.
 Now the support of $g_3$ is $[\beta_P-\Delta_P/2, \beta_P+\Delta_P/2]
 \subset[0,-\xmin]$. We make use of the periodicity of $f_3$ to rewrite
 \begin{equation}

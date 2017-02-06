@@ -17,8 +17,6 @@ be subsampled with Fourier interpolation. Default \code{r@psiBar}.}
 \item{pp}{Vector of length r@Ns giving the relative normalisation of the
 population densities. If this does not have length N it will
 be subsampled with Fourier interpolation. Default constant.}
-
-\item{Nu}{Steady-state nutrient concentration. Default: \code{r@NuBar}.}
 }
 \value{
 Matrix of dimension N x Ns

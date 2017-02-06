@@ -30,6 +30,7 @@ setClass("Sim",
 #' @param Nu0 Initial nutrient concentration. Defaults to steady state value.
 #' @param ... Arguments that will be used to initialise a Grid object if non
 #' is provided.
+#' @export
 Sim <- function(grid=NULL, params=NULL, p0=NULL, Nu0=NULL, ...) {
     if (is.null(grid)) {
         if(is.null(params)) {
@@ -90,6 +91,7 @@ Sim <- function(grid=NULL, params=NULL, p0=NULL, Nu0=NULL, ...) {
 #' only lest I might forget how to use as()
 #' @param sim Object of class Sim
 #' @return Object of class Grid
+#' @export
 getGrid <- function(sim) {
     as(sim, "Grid")
 }
@@ -97,6 +99,7 @@ getGrid <- function(sim) {
 #' Extract parameters from simulation
 #' @param sim Object of class Sim
 #' @return Object of class Grid
+#' @export
 getParams <- function(sim) {
     as(sim, "Params")
 }

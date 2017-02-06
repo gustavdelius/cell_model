@@ -72,6 +72,7 @@ setClass("Grid",
 #' @param Nt Number of time steps at which to return population density.
 #' If the vector \code{t} is supplied than \code{Nt} is set from that.
 #' @return Object of type Grid
+#' @export
 Grid <- function(params=NULL, Ns = 32L, N = 32L, ds= 4L,
                  t=NULL, tmax = 1, Nt = 99L, ...) {
     if (is.null(params)) {

@@ -84,7 +84,7 @@ evolve_cell_pop <- function(p0, Nu0, r) {
 #' Adds together the population density of all species
 #' wrapped around assuming periodicity in species size.
 #' Used in \code{\link{evolve_cel_pop}}.
-#' This returns the $\tilde{p}_c$ from the vignette that
+#' This returns the \eqn{\tilde{p}_c} from the vignette that
 #' is constant in the steady-state.
 #'
 #' @param p matrix of population densities (N x Ns)
@@ -117,19 +117,21 @@ community <- function(p, sim, smooth=FALSE) {
 
 #' Get community spectrum
 #'
-#' This produces $\tilde{p}_c(t, w)$ as defined in the vignette.
+#' This produces \eqn{\tilde{p}_c(t, w)} as defined in the vignette.
 #' In the steady state this should be constant in w.
 #' @param sim Sim object
 #' @param smooth Boolean flag. If true the output will be smoothed
 #' @return matrix Nt x Na
+#' @export
 get_community <- function(sim, smooth=TRUE) {
     aaply(sim@p, 1, "community", sim=sim, smooth=smooth)
 }
 
 #' Plot community spectrum against time and size
 #'
-#' This plots $\tilde{p}_c(t, w)$ as defined in the vignette.
+#' This plots \eqn{\tilde{p}_c(t, w)} as defined in the vignette.
 #' @param sim Sim object
+#' @export
 plot3d_community <- function(sim) {
     com <- get_community(sim)
     persp3d(sim@t, sim@xa, com, col = "lightblue",
@@ -139,10 +141,11 @@ plot3d_community <- function(sim) {
 
 #' Plot community spectrum against size at one time
 #'
-#' This plots $\tilde{p}_c(t, w)$ as defined in the vignette.
+#' This plots \eqn{\tilde{p}_c(t, w)} as defined in the vignette.
 #' @param sim Sim object
 #' @param t Time at which to plot. If the value is not available
 #' at that time, the last earlier time is used. Default: latest available time.
+#' @export
 plot_community <- function(sim, t=NULL) {
     if (is.null(t)) {
         ti <- sim@Nt+1
@@ -196,6 +199,7 @@ fourier_interpolate <- function(p, n) {
 #' population densities. If this does not have length N it will
 #' be subsampled with Fourier interpolation. Default constant.
 #' @return Matrix of dimension N x Ns
+#' @export
 make_p0 <- function(r, psi, pp) {
     if (class(r) == "Sim") {
         r <- as(r, "Grid")

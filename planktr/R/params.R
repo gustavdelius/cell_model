@@ -111,13 +111,16 @@ setClass("Params",
 
         # Predation
         epsilon = 0.9,  # Conversion efficiency
-        s0      = 0,  # strength of predation
+        s0      = 0,    # strength of predation
         beta_p  = 2,    # log of predator/prey mass ratio
         delta_p = 1     # width of predation kernel
     )
 )
 
-# Initialise object ----
+#' Create and initialise Params object
+#'
+#' @param ... Arguments that will be passed to \code{new()}.
+#' @export
 Params <- function(...) {
     r <- new("Params", ...)
 

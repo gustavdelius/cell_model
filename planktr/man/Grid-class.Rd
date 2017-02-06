@@ -3,13 +3,16 @@
 \docType{class}
 \name{Grid-class}
 \alias{Grid-class}
-\alias{plot,Grid,ANY-method}
+\alias{plot,Grid-method}
 \alias{show,Grid-method}
+\alias{summary,Grid-method}
 \title{An S4 class to represent a 3d grid on which to do a simulation}
 \usage{
-\S4method{plot}{Grid,ANY}(x, y, ...)
+\S4method{plot}{Grid}(x, y, ...)
 
 \S4method{show}{Grid}(object)
+
+\S4method{summary}{Grid}(object)
 }
 \description{
 An S4 class to represent a 3d grid on which to do a simulation
@@ -19,6 +22,8 @@ An S4 class to represent a 3d grid on which to do a simulation
 \item \code{plot}: Draws a picture of the grid
 
 \item \code{show}: Show very short description of object
+
+\item \code{summary}: List grid and model parameter values
 }}
 \section{Slots}{
 

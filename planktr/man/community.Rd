@@ -4,12 +4,14 @@
 \alias{community}
 \title{Determine community spectrum}
 \usage{
-community(p, sim)
+community(p, sim, smooth = FALSE)
 }
 \arguments{
 \item{p}{matrix of population densities (N x Ns)}
 
 \item{sim}{Sim object}
+
+\item{smooth}{Boolean flag. If true the output will be smoothed}
 }
 \value{
 A vector of community population densities at points \code{xa}
@@ -18,7 +20,7 @@ A vector of community population densities at points \code{xa}
 Adds together the population density of all species
 wrapped around assuming periodicity in species size.
 Used in \code{\link{evolve_cel_pop}}.
-This returns the $\tilde{p}_c$ from the vignette that
+This returns the \eqn{\tilde{p}_c} from the vignette that
 is constant in the steady-state.
 }
 

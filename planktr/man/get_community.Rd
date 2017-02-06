@@ -4,16 +4,18 @@
 \alias{get_community}
 \title{Get community spectrum}
 \usage{
-get_community(sim)
+get_community(sim, smooth = TRUE)
 }
 \arguments{
 \item{sim}{Sim object}
+
+\item{smooth}{Boolean flag. If true the output will be smoothed}
 }
 \value{
 matrix Nt x Na
 }
 \description{
-This produces $\tilde{p}_c(t, w)$ as defined in the vignette.
+This produces \eqn{\tilde{p}_c(t, w)} as defined in the vignette.
 In the steady state this should be constant in w.
 }
 

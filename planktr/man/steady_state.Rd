@@ -12,7 +12,7 @@ steady_state(r)
 \value{
 List containing:
   \enumerate{
-    \item vector of steady-state population densities $\psi$
+    \item vector of steady-state population densities \eqn{\psi}
     \item nutrient concentration at steady state
   }
 }
