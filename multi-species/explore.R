@@ -1,5 +1,5 @@
 library("deSolve")
-library("rgl")
+library("plot3Drgl")
 library("plyr")
 library("assertthat")
 library("ggplot2")

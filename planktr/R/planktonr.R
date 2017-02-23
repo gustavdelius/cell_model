@@ -4,5 +4,5 @@
 #' @import assertthat
 #' @import deSolve
 #' @import plyr
-#' @import rgl
+#' @import plot3Drgl
 "_PACKAGE"

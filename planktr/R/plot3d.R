@@ -19,9 +19,10 @@ setMethod("plot3d", c(r="Sim", t="numeric", xs="missing"),
         }
         z <- if (zlog) log(pmax(r@p[ti, , ], 0.05)) else r@p[ti, , ]
         zlab <- if (zlog) "log(p)" else "p"
-        persp3d(r@x, r@xs, z, col = "lightblue",
+        persp3D(r@x, r@xs, z,
                 xlab="x", ylab="x*", zlab=zlab,
-                main=paste("Spectrum at t=", r@t[ti]))
+                main=paste("Spectrum at t=", r@t[ti]),
+                ticktype="detailed", nticks=4)
     }
 )
 
@@ -35,21 +36,23 @@ setMethod("plot3d", c(r="Sim", t="missing", xs="numeric"),
         }
         z <- if (zlog) log(pmax(r@p[ , , xsi], 0.05)) else r@p[ , , xsi]
         zlab <- if (zlog) "log(p)" else "p"
-        persp3d(r@t, r@x, z, col = "lightblue",
+        persp3D(r@t, r@x, z,
                 xlab="t", ylab="x", zlab=zlab,
-                main=paste("Spectrum at xs=", r@xs[xsi]))
+                main=paste("Spectrum at xs=", r@xs[xsi]),
+                ticktype="detailed", nticks=4)
 
     }
 )
 
 #' @describeIn plot3d 3d plot of community density against x and xa
 setMethod("plot3d", c(r="Sim", t="missing", xs="missing"),
-          function(r, zlog=FALSE) {
-              com <- get_community(r)
+          function(r, zlog=FALSE, smooth=TRUE) {
+              com <- get_community(r, smooth = smooth)
               com <- if (zlog) log(pmax(com, 0.05)) else com
               zlab <- if (zlog) "log(p_c)" else "p_c"
-              persp3d(r@t, r@xa, com, col = "lightblue",
-                      xlab="t", ylab="xa", zlab=zlab,
-                      main="Community size spectrum")
+              persp3D(r@t, r@xa, com,
+                      xlab="t", ylab="x", zlab=zlab,
+                      main="Community size spectrum",
+                      ticktype="detailed", nticks=4)
           }
 )
