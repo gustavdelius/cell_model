@@ -20,7 +20,7 @@ setMethod("plot3d", c(r="Sim", t="numeric", xs="missing"),
         z <- if (zlog) log(pmax(r@p[ti, , ], 0.05)) else r@p[ti, , ]
         zlab <- if (zlog) "log(p)" else "p"
         persp3d(r@x, r@xs, z, col = "lightblue",
-                xlab="x", ylab="xs", zlab=zlab,
+                xlab="x", ylab="x*", zlab=zlab,
                 main=paste("Spectrum at t=", r@t[ti]))
     }
 )

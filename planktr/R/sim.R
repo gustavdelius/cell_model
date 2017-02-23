@@ -117,12 +117,12 @@ setMethod("plot", "Sim",
         } else {
             ti <- which(x@t >= t)[1]
             if (is.na(ti)) {
-                ti <- length(r@t)
-                message("Defaulting to t=", r@t[ti])
+                ti <- length(x@t)
+                message("Defaulting to t=", x@t[ti])
             }
         }
         xx <- if (xlog) x@x else x@w
-        xlab <- if (xlog) "x" else "y"
+        xlab <- if (xlog) "x" else "w/w*"
 
         plot(xx, x@p[ti, , s], type="l",
              xlab=xlab, ylab=paste("p_1(t=", x@t[ti], ")"),

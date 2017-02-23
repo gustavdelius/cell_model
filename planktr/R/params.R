@@ -30,6 +30,7 @@
 #' \code{Nu} and plankton population \code{psi}.
 #' @slot k Function \code{k(w)} giving duplication rate for a cell of weight
 #' \code{w}
+#' @slot q Function \code{q(w/w')} gving the offspring size distribution
 #' @slot g Function \code{g(w, Nu)} giving the growth due to resource
 #' consumption for a cell of weight \code{w} as a function of resource
 #' concentration \code{Nu}.
