@@ -71,13 +71,13 @@
 \newcommand{\R}{{\normalfont\textsf{R }}{}}
 \newcommand{\args}[1]{{\texttt{#1}}}
 
-\newcommand{\xmin}{x_{\rm{min}}}
-\newcommand{\xmax}{x_{\rm{max}}}
-\newcommand{\w}{\omega}
-\newcommand{\x}{\tilde{x}}
-\newcommand{\y}{\tilde{y}}
-\newcommand{\wwmin}{\w_{\rm{min}}}
-\newcommand{\xxmin}{\x_{\rm{min}}}
+\newcommand{\xmin}{x_{\rm{min}}}  % smallest log cell size
+\newcommand{\xmax}{x_{\rm{max}}}  % largest log cell size
+\newcommand{\w}{\omega}     % ratio of cell size to maximum size
+\newcommand{\x}{\tilde{x}}  % log of \w
+\newcommand{\y}{\tilde{y}}  % log of another \w
+\newcommand{\wwmin}{\w_{\rm{min}}}  % ratio of smallest to largest cell size
+\newcommand{\xxmin}{\x_{\rm{min}}}  % log of ratio of smalles to largest cell size
 \newcommand{\xt}{\x_{\rm{th}}}
 
 \begin{document}
@@ -121,7 +121,7 @@ rm(list=ls())
 The plaktonr package provides code to simulate a multi-species size-resolved
 community of unicellular plankton, using the model described in the paper
 \cite{cuesta_sheldon_2016}.
-The model differs from other planktonmodels in that it
+The model differs from other plankton models in that it
 describes the growth during the lifetime of individual cells. So it resolves
 two size variables: the characteristic sizes of the species and the sizes of
 the individuals.
@@ -190,18 +190,18 @@ of the relative weight $w/w_i$ with respect to that species' maximum
 weight $w_i$.
 This has the advantage that for
 all species this abundance has support in the same interval
-$w/w_i\in[\wmin,1]$, were $\wmin$ is the smallest relative size possible
+$w/w_i\in[\wwmin,1]$, were $\wmin$ is the smallest relative size possible
 for any cell.
 
-The reason for taking out the factor $w_i^{-\gamma}$ in \eqref{dis} is that it turns out that in the steady state this has the effect that all species are
+Taking out the factor $w_i^{-\gamma}$ in \eqref{dis} has the effect that in the steady state this all species are
 described by the same function $p_i$, a phenomenon that is due to the
-scale-invariance of the model, see \cite{cuesta_sheldon_2016} for details.
+scale-invariance of the model. See \cite{cuesta_sheldon_2016} for details.
 The same scale-invariance property also implies that, as long as we ignore predation,
 \begin{align*}
 G(w,\ws)&=\ws^{1-\xi}g(w/\ws),&
 K(w,\ws)&=\ws^{-\xi}k(w/\ws),\\
 M(w,\ws)&=\ws^{-\xi}m(w/\ws),
-&Q(w,w')&=q(w/w')/w'.
+&Q(w|w')&=q(w/w')/w'.
 \end{align*}
 If we substitute these expressions into the population balance equation \eqref{eq:MFdiv} and perform a change of variables to $\w =w/w_i$,
 we obtain the equations
@@ -324,21 +324,21 @@ By using FFT this can be cut down to order $N\log N$.
 
 \subsection{Reproduction}
 
-To see that the integral in \eqref{pbe} is a convolution integral, we write $\w=e^\x$ and $\w'=e^\y$ and
+To see that the integral in \eqref{pbe} is a convolution integral, we write $\w=e^{\x}$ and $\w'=e^{\y}$ and
 observe that then $\w'^{-1}d\w'=dy$ so that the integral takes the form
 \[\begin{split}
-\int q(\w/\w')\left[k(\w')p_i(\w')\right]\w'^{-1}d\w'&=\int q(e^{\x-\y})k(e^\y)p_i(e^\y)d\y\\
+\int q(\w/\w')\left[k(\w')p_i(\w')\right]\w'^{-1}d\w'&=\int q(e^{\x-\y})k(e^{\y})p_i(e^{\y})d\y\\
 &=\int_{\xt}^0 f_1(\x-\y)g_1(\y)d\y=C_1(\x).
 \end{split}\]
 The subscript $1$ is to distinguish this convolution integral from two others that will arise when we start including predation in the model.
-We need to calculate the convolution integral for all $\x\in[\xmin,0]$, where
-$\xmin=\log\wmin$ is the smallest possible log cell size.
-The reason we can restrict the integral to run only from $\xt$ to $0$,
+We need to calculate the convolution integral for all $\x\in[\xxmin,0]$, where
+$\xxmin=\log\wwmin$.
+We can restrict the integral to run only from $\xt$ to $0$,
 where $\xt$ is the log of the threshold size below which not division is
-taking place, is that the factor $g_1(\y)$ is zero outside that interval anyway.
+taking place, because the factor $g_1(\y)$ is zero outside that interval.
 With $\y$ ranging only over the interval $[\xt,0]$, the largest region in
-which the function $f_1$ gets evaluated is the interval $[\xmin, -\xt]$.
-Thus we can replace $f_1$ by a periodic function $\bar{f_1}$ with period $L=-\xmin$, without changing the value
+which the function $f_1$ gets evaluated is the interval $[\xxmin, -\xt]$.
+Thus we can replace $f_1$ by a periodic function $\bar{f_1}$ with period $L=-\xxmin$, without changing the value
 of the integral, because $\bar{f_1}$ is zero on the interval from $0$ to $-\xt$ and agrees with $f_1$ on the interval $[\xmin, 0]$.
 We can then also replace $g$ by a periodic function $\bar{g}$ with the same period $L$, which again does not change the integral because $\bar{g}$ agrees with $g$ on the interval $[\xmin, 0]$ and is not used outside that interval.
 This gives us
