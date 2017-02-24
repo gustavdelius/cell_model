@@ -13,7 +13,8 @@ Imports:
     assertthat,
     deSolve,
     plyr,
-    rgl
+    rgl,
+    plot3Drgl
 Suggests:
     testthat,
     roxygen2,
@@ -26,6 +27,7 @@ Collate:
     'lib.R'
     'planktonr.R'
     'sim.R'
+    'plot3_D.R'
     'plot3d.R'
     'steady_state.R'
 RoxygenNote: 5.0.1
