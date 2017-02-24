@@ -1,0 +1,222 @@
+---
+title: "Exploring"
+author: "Gustav Delius"
+date: "23 February 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library("deSolve")
+library("rgl")
+library("plyr")
+library("assertthat")
+library("ggplot2")
+devtools::load_all(".")
+```
+
+## Setting up default simulation
+
+We set up the parameters for a simulation with the `Params()` function.
+It can be called without parameters and then chooses default values:
+
+```{r}
+r <- Params()
+summary(r)
+```
+
+The `summary()` method prints out the values of the parameters. 
+
+There are other slots that are not displayed by `summary()` because they are determined by those parameters: there are slots for the various rate functions used by the model and there are slots for the steady-state solution that is determined by the parameters. To see all the slots take a look at the documentation
+```{r}
+help("Params-class")
+```
+
+A `Params` object also has a `plot()` method. It just displays the steady-state solution for the within-species size distribution.
+```{r}
+plot(r)
+```
+
+We can now simulate the time evolution using the `Sim` method. One possible way to do this is to call it with a `Params` object for the `params` argument.
+```{r}
+sim <- Sim(params=r)
+```
+
+In this simple call, `Sim()` automatically chose how many species to simulate and of what sizes and what step sizes to use and it chooses the steady-state as the initial condition. Of course that makes for a rather boring simulation.
+```{r}
+summary(sim)
+```
+
+We can plot the size distribution of any species at any time with the `plot()` method.
+```{r}
+plot(sim, s=5, t=1)
+```
+We can also use the log weight on the horizontal axis.
+```{r}
+plot(sim, s=5, t=1, xlog=TRUE)
+```
+We can also produce various 3d plots.
+
+If we specify the time, we get a plot of the size-distribution for all values of x*.
+```{r}
+plot3d(sim, t=1)
+```
+In this simulation where we start in the steady-state we expect all species to have the same distribution and that is indeed what we see.
+
+If we specify the value of x* we get the size distribution of that species for all times.
+```{r}
+plot3d(sim, xs=0)
+```
+Again this plot is boring because the species was started off in the steady state.
+
+If we specify neither time nor species, we get a plot of the community spectrum over time.
+```{r}
+plot3d(sim)
+```
+That this is not entirely flat is due to the discreteness of the species. An even more dramatical illustration of this is obtained when we set the argument `smooth = FALSE` on `plot3d()` which will then show a lot of fluctuation due to discreteness:
+```{r}
+plot3d(sim, smooth=FALSE)
+```
+
+There is also a bit of change over time because we did not get the steady state resource level exactly right. Let's plot the resource level:
+```{r}
+plot(sim@t, sim@Nu, type="l")
+```
+
+## Different initial condition
+
+When we called `Sim()` with only a `Params` object, it constructed a default grid. We can extract that grid from the sim object.
+
+```{r}
+gr <- getGrid(sim)
+```
+Now we can use that grid to construct a vector with an initial within-species size-distribution
+```{r}
+p00 <- exp(-100*(gr@x+0.5)^2)
+plot(gr@x, p00, type="l")
+```
+With `make_p0()` we can create an initial state where all species have the same given within-species distribution and a constant across-species distribution.
+```{r}
+p0 <- make_p0(gr, p00)
+```
+If we now simulate the time evolution we can see how the cells grow and reproduce to create a new generation of cells that is slightly more broadly distributed.
+```{r}
+sim0 <- Sim(params=r, tmax=2, p0=p0)
+```
+
+```{r}
+plot3d(sim0, xs=0)
+```
+
+
+## With predation
+Next we turn on predation
+```{r}
+params <- Params(s0=5, ke=4, k_0=50000, xi=0, beta_p=1, delta_p=0.2)
+```
+This slightly changes the within-species steady state size distribution:
+```{r}
+plot(params)
+```
+
+```{r}
+sim0 <- Sim(params=params, tmax=5)
+```
+
+```{r}
+plot3d(sim0, t=5)
+```
+```{r}
+plot3d(sim0, xs=0)
+
+```
+
+This looks sensible, but look what happens when we add a little bit of noise to the across-species distribution:
+
+
+```{r}
+pp <- 1+rnorm(sim0@Ns, 0, 0.01)
+p0 <- make_p0(sim, pp=pp)
+simr <- Sim(params=params, tmax=10, p0=p0)
+```
+
+```{r}
+plot3d(simr)
+```
+
+With more interesting inital across-species distribution:
+
+```{r}
+pp <- 1+exp(-40*(sim0@xs+2)^2)
+plot(pp, type="l")
+```
+
+```{r}
+p0 <- make_p0(sim0, pp=pp)
+simg <- Sim(params=params, tmax=10, p0=p0)
+```
+
+```{r}
+plot3d(simg)
+```
+
+At individual time slices we can look at the distribution as a function of both x and x*:
+
+```{r}
+plot3d(simg, xs=-0.8)
+```
+'Let's look at a movie of the time evolution:
+```{r}
+for (ti in 1:simg@Nt) {
+    persp3d(simg@x, simg@xs, simg@p[ti, , ], col = "lightblue", 
+            xlab="x", ylab="x*", zlab="p")
+    Sys.sleep(0.5)
+}
+```
+
+To calculate the next time period we can start a new simulation with the final state from the previous simulation as new input.
+
+```{r}
+simg2 <- Sim(params=params, tmax=5, p0=simg@p[simg@Nt, , ], Nu0=simg@Nu[simg@Nt])
+```
+```{r}
+plot3d(simg2)
+```
+
+Let's have a look at the resource concentration over time:
+```{r}
+plot(simg@t, sim2@Nu, type="l")
+```
+
+Now let us start with an initial distribution that is wrong in both dimensions
+
+```{r}
+p00 <- exp(-100*(sim@x+0.5)^2)
+pp <- 1+exp(-40*(sim@xs+2)^2)
+p0 <- make_p0(sim, psi=p00, pp=pp)
+persp3D(sim@x, sim@xs, p0,
+        xlab="x", ylab="x*", zlab="p0",
+        main="Initial spectrum",
+        ticktype="detailed", nticks=4)
+```
+
+```{r}
+simb <- Sim(params=params, tmax=10, p0=p0)
+```
+
+```{r}
+plot3d(simb)
+```
+
+
+```{r}
+plot3d(simb, t=0.2)
+```
+```{r}
+for (ti in 1:simb@Nt) {
+    persp3d(simb@x, simb@xs, simb@p[ti, , ], col = "lightblue", 
+            xlab="x", ylab="x*", zlab="p")
+    Sys.sleep(0.5)
+}
+```
